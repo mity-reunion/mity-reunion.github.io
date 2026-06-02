@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>M.I.T.Y REUNION — 예매</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <!-- 네이버 SDK -->
+  <script type="text/javascript" src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.2.js" charset="utf-8"></script>
+  <!-- 카카오 SDK -->
+  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiJwsuZuItXz4Cs0ZondQ2rfjcWBpIN3Y",
+      authDomain: "mity-reunion.firebaseapp.com",
+      projectId: "mity-reunion",
+      storageBucket: "mity-reunion.firebasestorage.app",
+      messagingSenderId: "448114398497",
+      appId: "1:448114398497:web:f65288fdf0c79287ab1a60",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    window._db = db;
+    window._firestoreLib = { doc, setDoc, getDoc, updateDoc };
+  </script>
+
+  <style>
+    :root {
+      --black: #000;
+      --white: #fff;
+      --red: #cc2200;
+      --border: rgba(255,255,255,0.12);
+      --muted: rgba(255,255,255,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--black); color: var(--white);
+      min-height: 100vh; cursor: crosshair;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 18px 40px; mix-blend-mode: difference;
+    }
+    .nav-logo { font-weight: 900; font-size: 1rem; letter-spacing: 0.2em; color: var(--white); text-decoration: none; }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-step  { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.15em; }
+    .nav-user  { font-size: 0.75rem; color: var(--muted); }
+    .btn-logout {
+      font-size: 0.72rem; color: var(--muted); background: none;
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 4px 10px; cursor: pointer; font-family: inherit;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-logout:hover { color: var(--white); border-color: rgba(255,255,255,0.4); }
+
+    /* PAGES */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px 60px; }
+
+    /* ── 로그인 ── */
+    .login-box { width: min(400px, 90vw); display: flex; flex-direction: column; align-items: center; }
+    .login-title { font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 8px; text-align: center; }
+    .login-sub   { font-size: 0.82rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 48px; text-align: center; }
+
+    .social-btn {
+      width: 100%; display: flex; align-items: center; gap: 14px;
+      padding: 15px 24px; border: none; border-radius: 4px;
+      font-family: 'Noto Sans KR', sans-serif; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s, transform 0.15s;
+      margin-bottom: 12px; letter-spacing: 0.03em;
+    }
+    .social-btn:hover  { opacity: 0.88; transform: translateY(-1px); }
+    .social-btn:active { transform: translateY(0); }
+    .btn-naver  { background: #03C75A; color: #fff; }
+    .btn-kakao  { background: #FEE500; color: #191919; }
+    .btn-icon   { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .btn-text   { flex: 1; text-align: center; }
+
+    .login-notice { margin-top: 28px; font-size: 0.72rem; color: var(--muted); text-align: center; line-height: 1.9; }
+
+    /* ── 좌석 ── */
+    .dot-bg { background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 8px 8px; }
+
+    .seat-page { width: min(900px, 96vw); display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 80px 20px 60px; }
+    .seat-header { text-align: center; }
+    .seat-header h2 { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 6px; }
+    .seat-header p  { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.06em; }
+
+    .seat-layout { width: 100%; display: flex; gap: 24px; align-items: flex-start; }
+    .seat-main   { flex: 1; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+
+    .stage { width: 100%; max-width: 580px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; padding: 10px; text-align: center; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3em; color: var(--muted); }
+
+    .floor-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.2em; margin: 6px 0 2px; align-self: flex-start; padding-left: 26px; }
+    .seat-map  { width: 100%; display: flex; flex-direction: column; gap: 5px; align-items: center; }
+    .seat-row  { display: flex; align-items: center; gap: 5px; }
+    .row-label { width: 18px; text-align: center; font-size: 0.62rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+
+    .seat {
+      width: 26px; height: 22px; border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+      cursor: pointer; transition: background 0.1s, transform 0.1s; font-size: 0;
+    }
+    .seat:hover:not(.reserved):not(.wc-seat) { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+    .seat.selected  { background: var(--white); border-color: var(--white); }
+    .seat.reserved  { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); cursor: not-allowed; }
+    .seat.wc-seat   { background: rgba(56,189,248,0.15); border-color: rgba(56,189,248,0.4); }
+    .seat.wc-seat.selected { background: #38bdf8; border-color: #38bdf8; }
+    .seat-gap { width: 14px; }
+
+    .seat-legend { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
+    .legend-dot  { width: 13px; height: 13px; border-radius: 3px; }
+    .ld-avail  { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); }
+    .ld-sel    { background: var(--white); }
+    .ld-res    { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+    .ld-wc     { background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.4); }
+
+    /* 사이드바 */
+    .seat-sidebar { width: 210px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 14px; position: sticky; top: 80px; }
+    .sidebar-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); }
+    .sidebar-seats { min-height: 56px; }
+    .sidebar-seat-item { font-size: 0.8rem; padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .remove-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 0 2px; transition: color 0.15s; }
+    .remove-btn:hover { color: var(--red); }
+    .sidebar-empty { font-size: 0.78rem; color: var(--muted); }
+    .sidebar-price { display: flex; justify-content: space-between; align-items: baseline; }
+    .price-label   { font-size: 0.7rem; color: var(--muted); }
+    .price-val     { font-size: 1.1rem; font-weight: 900; }
+
+    .btn-book {
+      width: 100%; padding: 13px; background: var(--white); color: var(--black);
+      border: none; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.88rem; font-weight: 900; letter-spacing: 0.1em; cursor: pointer;
+      box-shadow: 3px 3px 0 var(--red); transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .btn-book:hover    { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--red); }
+    .btn-book:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    /* ── 완료 ── */
+    .done-box { width: min(440px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
+    .done-icon { font-size: 3rem; }
+    .done-title { font-size: 1.6rem; font-weight: 900; }
+    .done-sub   { font-size: 0.85rem; color: var(--muted); line-height: 1.8; }
+    .done-ref   { font-size: 1rem; font-weight: 700; letter-spacing: 0.15em; padding: 14px 24px; border: 1px solid var(--border); border-radius: 4px; }
+    .btn-home   { margin-top: 8px; padding: 12px 32px; background: var(--white); color: var(--black); border: none; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.9rem; font-weight: 900; cursor: pointer; box-shadow: 3px 3px 0 var(--red); transition: transform 0.12s; }
+    .btn-home:hover { transform: translate(-1px,-1px); }
+
+    /* 토스트 */
+    .toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(30,30,30,0.95); border: 1px solid var(--border); color: var(--white); padding: 12px 24px; border-radius: 4px; font-size: 0.82rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; z-index: 999; white-space: nowrap; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+    .fade-up { animation: fadeUp 0.4s ease forwards; }
+
+    @media (max-width: 680px) {
+      nav { padding: 16px 20px; }
+      .seat-layout { flex-direction: column; }
+      .seat-sidebar { width: 100%; position: static; }
+      .seat { width: 20px; height: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="nav-logo">M.I.T.Y</a>
+    <div class="nav-right">
+      <span class="nav-user" id="navUser"></span>
+      <span class="nav-step" id="navStep">로그인</span>
+      <button class="btn-logout" id="btnLogout" style="display:none" onclick="logout()">로그아웃</button>
+    </div>
+  </nav>
+
+  <!-- 로그인 -->
+  <div class="page active" id="pageLogin">
+    <div class="login-box fade-up">
+      <h1 class="login-title">예매하기</h1>
+      <p class="login-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+
+      <button class="social-btn btn-naver" onclick="loginNaver()">
+        <span class="btn-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M13.6 12.4L10.2 7H7v10h3.4l3.4-5.4L17 17h3.2V7H17z" fill="white"/>
+          </svg>
+        </span>
+        <span class="btn-text">네이버로 계속하기</span>
+      </button>
+
+      <button class="social-btn btn-kakao" onclick="loginKakao()">
+        <span class="btn-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3C7.03 3 3 6.36 3 10.5c0 2.65 1.72 4.97 4.32 6.35l-.9 3.35 3.9-2.57c.53.07 1.08.11 1.68.11 4.97 0 9-3.36 9-7.5S16.97 3 12 3z" fill="#191919"/>
+          </svg>
+        </span>
+        <span class="btn-text">카카오로 계속하기</span>
+      </button>
+
+      <p class="login-notice">
+        로그인 시 예매 내역 조회 및 취소가 가능합니다.<br>
+        개인정보는 예매 목적으로만 사용됩니다.
+      </p>
+    </div>
+  </div>
+
+  <!-- 좌석 선택 -->
+  <div class="page dot-bg" id="pageSeat">
+    <div class="seat-page">
+      <div class="seat-header fade-up">
+        <h2>좌석 선택</h2>
+        <p>원하는 좌석을 선택해 주세요 · 최대 4석</p>
+      </div>
+
+      <div class="seat-layout fade-up">
+        <div class="seat-main">
+          <div class="stage">STAGE</div>
+          <p class="floor-label">B2F — 수납객석</p>
+          <div class="seat-map" id="mapB2F"></div>
+          <div style="height:10px"></div>
+          <p class="floor-label">B1F — 고정객석</p>
+          <div class="seat-map" id="mapB1F"></div>
+          <div class="seat-legend">
+            <div class="legend-item"><div class="legend-dot ld-avail"></div>선택 가능</div>
+            <div class="legend-item"><div class="legend-dot ld-sel"></div>선택됨</div>
+            <div class="legend-item"><div class="legend-dot ld-res"></div>예매 완료</div>
+            <div class="legend-item"><div class="legend-dot ld-wc"></div>휠체어석</div>
+          </div>
+        </div>
+
+        <div class="seat-sidebar">
+          <p class="sidebar-title">선택한 좌석</p>
+          <div class="sidebar-seats" id="sidebarSeats">
+            <p class="sidebar-empty">선택된 좌석이 없습니다</p>
+          </div>
+          <div class="sidebar-price">
+            <span class="price-label">합계</span>
+            <span class="price-val" id="totalPrice">₩0</span>
+          </div>
+          <button class="btn-book" id="btnBook" disabled onclick="confirmBooking()">예매 확정</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 예매 완료 -->
+  <div class="page" id="pageDone">
+    <div class="done-box fade-up">
+      <div class="done-icon">🎭</div>
+      <h2 class="done-title">예매 완료!</h2>
+      <p class="done-sub">예매가 성공적으로 완료되었습니다.<br>공연 당일 예매번호를 보여주세요.</p>
+      <div class="done-ref" id="doneRef">—</div>
+      <p class="done-sub" id="doneSeats"></p>
+      <button class="btn-home" onclick="location.href='index.html'">메인으로 돌아가기</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── 상수 ──
+    const PRICE        = 20000;
+    const MAX_SEATS    = 4;
+    const KAKAO_KEY    = '38d42dffa61867ec85f0879ccd9906c0';
+    const NAVER_CLIENT = '22ahyWvRWcJQhbylo0QI';
+    const REDIRECT_URI = 'https://mity-reunion.github.io/booking.html';
+
+    // ── 상태 ──
+    let currentUser = null;   // { id, name, provider }
+    let reserved    = new Set();
+    const selected  = new Set();
+
+    // ── 카카오 초기화 ──
+    Kakao.init(KAKAO_KEY);
+
+    // ── 페이지 진입 시 로그인 상태 복원 ──
+    window.addEventListener('load', async () => {
+      // 네이버 access_token 콜백 처리 (hash 방식)
+      if (naverLogin.oauthParams && naverLogin.oauthParams.access_token) {
+        const handled = await handleNaverToken();
+        if (handled) return;
+      }
+
+      // 카카오 로그인 복원
+      if (Kakao.Auth.getAccessToken()) {
+        try {
+          const info = await new Promise((res, rej) =>
+            Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
+          );
+          currentUser = {
+            id: String(info.id),
+            name: info.kakao_account?.profile?.nickname || '카카오 사용자',
+            provider: 'kakao'
+          };
+          afterLogin();
+          return;
+        } catch(e) {}
+      }
+
+      // 세션에 저장된 네이버 유저
+      const saved = sessionStorage.getItem('naver_user');
+      if (saved) {
+        currentUser = JSON.parse(saved);
+        afterLogin();
+        return;
+      }
+
+      showPage('login');
+    });
+
+    // ── 카카오 로그인 ──
+    function loginKakao() {
+      Kakao.Auth.login({
+        success: async () => {
+          const info = await new Promise((res, rej) =>
+            Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
+          );
+          currentUser = {
+            id: String(info.id),
+            name: info.kakao_account?.profile?.nickname || '카카오 사용자',
+            provider: 'kakao'
+          };
+          afterLogin();
+        },
+        fail: (err) => {
+          showToast('카카오 로그인에 실패했습니다.');
+          console.error(err);
+        }
+      });
+    }
+
+    // ── 네이버 SDK 초기화 ──
+    const naverLogin = new naver_id_login(NAVER_CLIENT, REDIRECT_URI);
+
+    function loginNaver() {
+      naverLogin.go_login();
+    }
+
+    // 네이버 콜백 처리 (access_token이 hash에 담겨 돌아옴)
+    async function handleNaverToken() {
+      const token = naverLogin.oauthParams.access_token;
+      if (!token) return false;
+
+      naverLogin.get_naver_userprofile('handleNaverProfile');
+      return true;
+    }
+
+    // 네이버 프로필 콜백 (SDK가 전역 함수로 호출)
+    window.handleNaverProfile = function() {
+      const name = naverLogin.getProfileData('name') || '네이버 사용자';
+      const id   = naverLogin.getProfileData('id')   || ('naver_' + Date.now());
+      currentUser = { id: 'naver_' + id, name, provider: 'naver' };
+      sessionStorage.setItem('naver_user', JSON.stringify(currentUser));
+      afterLogin();
+    };
+
+    // ── 로그인 후 처리 ──
+    async function afterLogin() {
+      document.getElementById('navUser').textContent = currentUser.name;
+      document.getElementById('btnLogout').style.display = '';
+      await loadReserved();
+      showPage('seat');
+      buildSeats();
+    }
+
+    // ── 로그아웃 ──
+    function logout() {
+      if (currentUser?.provider === 'kakao') Kakao.Auth.logout();
+      sessionStorage.removeItem('naver_user');
+      currentUser = null;
+      selected.clear();
+      document.getElementById('navUser').textContent = '';
+      document.getElementById('btnLogout').style.display = 'none';
+      showPage('login');
+    }
+
+    // ── Firestore: 예약된 좌석 로드 ──
+    async function loadReserved() {
+      reserved.clear();
+      if (!window._db) return;
+      const { doc, getDoc } = window._firestoreLib;
+      try {
+        const snap = await getDoc(doc(window._db, 'seats', 'reserved'));
+        if (snap.exists()) {
+          (snap.data().list || []).forEach(s => reserved.add(s));
+        }
+      } catch(e) { console.warn('Firestore 로드 실패', e); }
+    }
+
+    // ── Firestore: 예약 저장 ──
+    async function saveBooking(refNum, seats) {
+      if (!window._db) return;
+      const { doc, setDoc, getDoc, updateDoc } = window._firestoreLib;
+      const db = window._db;
+
+      // 예매 내역 저장
+      await setDoc(doc(db, 'bookings', refNum), {
+        ref: refNum,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        provider: currentUser.provider,
+        seats: [...seats],
+        amount: seats.size * PRICE,
+        createdAt: new Date().toISOString(),
+        status: 'confirmed'
+      });
+
+      // reserved 좌석 업데이트
+      const seatDoc = doc(db, 'seats', 'reserved');
+      const snap = await getDoc(seatDoc);
+      const existing = snap.exists() ? (snap.data().list || []) : [];
+      const updated  = [...new Set([...existing, ...seats])];
+      await setDoc(seatDoc, { list: updated });
+    }
+
+    // ── 좌석 빌드 ──
+    let seatsBuilt = false;
+    function buildSeats() {
+      if (seatsBuilt) { refreshSeatUI(); return; }
+      seatsBuilt = true;
+      buildB2F(); buildB1F();
+    }
+
+    function buildB2F() {
+      const map = document.getElementById('mapB2F');
+      ['A','B','C','D','E','F','G'].forEach(row => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'seat-row';
+        const label = document.createElement('div');
+        label.className = 'row-label'; label.textContent = row;
+        rowEl.appendChild(label);
+        for (let s = 1; s <= 16; s++) {
+          if (s === 9) { const g = document.createElement('div'); g.className='seat-gap'; rowEl.appendChild(g); }
+          addSeat(rowEl, `${row}-${s}`, `${row}열 ${s}번`);
+        }
+        map.appendChild(rowEl);
+      });
+    }
+
+    function buildB1F() {
+      const map = document.getElementById('mapB1F');
+      ['H','I','J','K'].forEach(row => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'seat-row';
+        const label = document.createElement('div');
+        label.className = 'row-label'; label.textContent = row;
+        rowEl.appendChild(label);
+        for (let s = 1; s <= 12; s++) {
+          if (s === 7) { const g = document.createElement('div'); g.className='seat-gap'; rowEl.appendChild(g); }
+          addSeat(rowEl, `${row}-${s}`, `${row}열 ${s}번`);
+        }
+        map.appendChild(rowEl);
+      });
+      // L열
+      const rowL = document.createElement('div');
+      rowL.className = 'seat-row';
+      const labelL = document.createElement('div');
+      labelL.className = 'row-label'; labelL.textContent = 'L';
+      rowL.appendChild(labelL);
+      addSeat(rowL, 'L-WC1', '휠체어석 1', true);
+      addSeat(rowL, 'L-WC2', '휠체어석 2', true);
+      const g = document.createElement('div'); g.className='seat-gap'; rowL.appendChild(g);
+      addSeat(rowL, 'L-1', 'L열 1번');
+      addSeat(rowL, 'L-2', 'L열 2번');
+      map.appendChild(rowL);
+    }
+
+    function addSeat(rowEl, id, label, isWC=false) {
+      const btn = document.createElement('button');
+      btn.className = 'seat' + (isWC ? ' wc-seat' : '') + (reserved.has(id) ? ' reserved' : '');
+      btn.dataset.id = id; btn.title = label;
+      if (!reserved.has(id)) btn.onclick = () => toggleSeat(id, btn);
+      rowEl.appendChild(btn);
+    }
+
+    function refreshSeatUI() {
+      document.querySelectorAll('.seat').forEach(btn => {
+        const id = btn.dataset.id;
+        btn.classList.toggle('reserved', reserved.has(id));
+        btn.onclick = reserved.has(id) ? null : () => toggleSeat(id, btn);
+      });
+    }
+
+    function toggleSeat(id, btn) {
+      if (selected.has(id)) {
+        selected.delete(id); btn.classList.remove('selected');
+      } else {
+        if (selected.size >= MAX_SEATS) { showToast(`최대 ${MAX_SEATS}석까지 선택 가능합니다`); return; }
+        selected.add(id); btn.classList.add('selected');
+      }
+      updateSidebar();
+    }
+
+    function updateSidebar() {
+      const container = document.getElementById('sidebarSeats');
+      if (selected.size === 0) {
+        container.innerHTML = '<p class="sidebar-empty">선택된 좌석이 없습니다</p>';
+      } else {
+        container.innerHTML = [...selected].map(id => {
+          const lbl = id.includes('WC') ? `${id.split('-')[0]}열 휠체어` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`;
+          return `<div class="sidebar-seat-item"><span>${lbl}</span><button class="remove-btn" onclick="removeSeat('${id}')">×</button></div>`;
+        }).join('');
+      }
+      document.getElementById('totalPrice').textContent = `₩${(selected.size * PRICE).toLocaleString()}`;
+      document.getElementById('btnBook').disabled = selected.size === 0;
+    }
+
+    function removeSeat(id) {
+      selected.delete(id);
+      const btn = document.querySelector(`[data-id="${id}"]`);
+      if (btn) btn.classList.remove('selected');
+      updateSidebar();
+    }
+
+    // ── 예매 확정 ──
+    async function confirmBooking() {
+      if (!currentUser || selected.size === 0) return;
+      const btn = document.getElementById('btnBook');
+      btn.disabled = true; btn.textContent = '처리 중...';
+
+      const refNum = 'MR' + Date.now().toString(36).toUpperCase();
+      try {
+        await saveBooking(refNum, selected);
+        // UI 완료
+        document.getElementById('doneRef').textContent = refNum;
+        document.getElementById('doneSeats').textContent =
+          [...selected].map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ') +
+          ` · ₩${(selected.size * PRICE).toLocaleString()}`;
+        selected.clear(); updateSidebar();
+        showPage('done');
+      } catch(e) {
+        showToast('예매 저장 중 오류가 발생했습니다.');
+        console.error(e);
+        btn.disabled = false; btn.textContent = '예매 확정';
+      }
+    }
+
+    // ── 유틸 ──
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      const map = { login:'pageLogin', seat:'pageSeat', done:'pageDone' };
+      document.getElementById(map[name]).classList.add('active');
+      document.getElementById('navStep').textContent =
+        name === 'seat' ? '좌석 선택' : name === 'done' ? '예매 완료' : '로그인';
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+</html>
