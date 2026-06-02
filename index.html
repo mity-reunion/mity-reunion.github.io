@@ -104,8 +104,8 @@
     .meta-val { font-family: 'Noto Sans KR', sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: 0.02em; }
     .map-link { display: inline-flex; align-items: center; text-decoration: none; vertical-align: middle; margin-left: 8px; opacity: 0.9; transition: opacity 0.2s; }
     .map-link:hover { opacity: 1; }
-    .footer-logo { font-family: 'Noto Sans KR', sans-serif; font-weight: 900; font-size: 1.4rem; letter-spacing: 0.1em; }
-    .footer-info { font-size: 0.72rem; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-align: right; line-height: 1.8; }
+    .footer-logo { font-family: 'Noto Sans KR', sans-serif; font-weight: 900; font-size: 1.4rem; letter-spacing: 0.1em; text-align: center; }
+    .footer-info { font-size: 0.72rem; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; text-align: center; line-height: 1.8; }
 
     .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
     .fade-in.visible { opacity: 1; transform: none; }
@@ -181,8 +181,7 @@
       nav { padding: 16px 20px; } .nav-links { gap: 18px; }
       section { padding: 70px 20px; }
       .about-grid { grid-template-columns: 1fr; gap: 40px; }
-      footer { flex-direction: column; gap: 20px; text-align: center; }
-      .footer-info { text-align: center; }
+
     }
   </style>
 </head>
@@ -529,6 +528,7 @@
   </section>
   </div>
 
+  <div class="footer-outer">
   <footer>
     <div class="footer-logo">M.I.T.Y</div>
     <div class="footer-info">M.I.T.Y REUNION<br>07.11 SAT 2PM — 서교스퀘어<br>&nbsp;</div>
