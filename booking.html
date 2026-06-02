@@ -275,6 +275,13 @@
     const NAVER_CLIENT = '22ahyWvRWcJQhbylo0QI';
     const REDIRECT_URI = 'https://mity-reunion.github.io/booking.html';
 
+    // ── 네이버 SDK 초기화 (전역) ──
+    const naverLogin = new naver_id_login(NAVER_CLIENT, REDIRECT_URI);
+
+    function loginNaver() {
+      naverLogin.go_login();
+    }
+
     // ── 상태 ──
     let currentUser = null;   // { id, name, provider }
     let reserved    = new Set();
@@ -285,26 +292,24 @@
 
     // ── 페이지 진입 시 로그인 상태 복원 ──
     window.addEventListener('load', async () => {
+      // 카카오 콜백 처리
+      if (new URLSearchParams(location.search).get('code') && !new URLSearchParams(location.search).get('state')) {
+        const handled = await handleKakaoCallback();
+        if (handled) { await afterLogin(); return; }
+      }
+
       // 네이버 access_token 콜백 처리 (hash 방식)
       if (naverLogin.oauthParams && naverLogin.oauthParams.access_token) {
         const handled = await handleNaverToken();
         if (handled) return;
       }
 
-      // 카카오 로그인 복원
-      if (Kakao.Auth.getAccessToken()) {
-        try {
-          const info = await new Promise((res, rej) =>
-            Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
-          );
-          currentUser = {
-            id: String(info.id),
-            name: info.kakao_account?.profile?.nickname || '카카오 사용자',
-            provider: 'kakao'
-          };
-          afterLogin();
-          return;
-        } catch(e) {}
+      // 카카오 로그인 복원 (세션)
+      const savedKakao = sessionStorage.getItem('kakao_user');
+      if (savedKakao) {
+        currentUser = JSON.parse(savedKakao);
+        afterLogin();
+        return;
       }
 
       // 세션에 저장된 네이버 유저
@@ -320,31 +325,49 @@
 
     // ── 카카오 로그인 ──
     function loginKakao() {
-      Kakao.Auth.login({
-        success: async () => {
-          const info = await new Promise((res, rej) =>
-            Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
-          );
-          currentUser = {
-            id: String(info.id),
-            name: info.kakao_account?.profile?.nickname || '카카오 사용자',
-            provider: 'kakao'
-          };
-          afterLogin();
-        },
-        fail: (err) => {
-          showToast('카카오 로그인에 실패했습니다.');
-          console.error(err);
-        }
+      Kakao.Auth.authorize({
+        redirectUri: REDIRECT_URI,
       });
     }
 
-    // ── 네이버 SDK 초기화 ──
-    const naverLogin = new naver_id_login(NAVER_CLIENT, REDIRECT_URI);
+    async function handleKakaoCallback() {
+      const code = new URLSearchParams(location.search).get('code');
+      if (!code) return false;
+      try {
+        // 토큰 발급
+        const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: KAKAO_KEY,
+            redirect_uri: REDIRECT_URI,
+            code,
+          })
+        });
+        const token = await tokenRes.json();
+        if (!token.access_token) return false;
+        Kakao.Auth.setAccessToken(token.access_token);
 
-    function loginNaver() {
-      naverLogin.go_login();
+        // 사용자 정보
+        const info = await new Promise((res, rej) =>
+          Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
+        );
+        currentUser = {
+          id: String(info.id),
+          name: info.kakao_account?.profile?.nickname || '카카오 사용자',
+          provider: 'kakao'
+        };
+        sessionStorage.setItem('kakao_user', JSON.stringify(currentUser));
+        history.replaceState({}, '', location.pathname);
+        return true;
+      } catch(e) {
+        console.error('카카오 콜백 오류', e);
+        return false;
+      }
     }
+
+
 
     // 네이버 콜백 처리 (access_token이 hash에 담겨 돌아옴)
     async function handleNaverToken() {
@@ -375,8 +398,9 @@
 
     // ── 로그아웃 ──
     function logout() {
-      if (currentUser?.provider === 'kakao') Kakao.Auth.logout();
+      sessionStorage.removeItem('kakao_user');
       sessionStorage.removeItem('naver_user');
+      if (Kakao.Auth.getAccessToken()) Kakao.Auth.logout();
       currentUser = null;
       selected.clear();
       document.getElementById('navUser').textContent = '';
