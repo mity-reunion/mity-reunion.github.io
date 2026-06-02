@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>M.I.T.Y REUNION — 예매</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
-  <!-- 네이버 SDK -->
-  <script type="text/javascript" src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.2.js" charset="utf-8"></script>
   <!-- 카카오 SDK -->
   <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
   <!-- Firebase -->
@@ -275,11 +273,16 @@
     const NAVER_CLIENT = '22ahyWvRWcJQhbylo0QI';
     const REDIRECT_URI = 'https://mity-reunion.github.io/booking.html';
 
-    // ── 네이버 SDK 초기화 (전역) ──
-    const naverLogin = new naver_id_login(NAVER_CLIENT, REDIRECT_URI);
-
     function loginNaver() {
-      naverLogin.go_login();
+      const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      sessionStorage.setItem('naver_state', state);
+      const params = new URLSearchParams({
+        response_type: 'token',
+        client_id: NAVER_CLIENT,
+        redirect_uri: REDIRECT_URI,
+        state,
+      });
+      location.href = 'https://nid.naver.com/oauth2.0/authorize?' + params.toString();
     }
 
     // ── 상태 ──
@@ -298,9 +301,8 @@
         if (handled) { await afterLogin(); return; }
       }
 
-      // 네이버 access_token 콜백 처리 (hash 방식) — SDK state 검증 실패 시도 직접 읽음
-      const _hashToken = new URLSearchParams(location.hash.slice(1)).get('access_token');
-      const _naverToken = naverLogin.oauthParams?.access_token || _hashToken;
+      // 네이버 access_token 콜백 처리 (hash 방식)
+      const _naverToken = new URLSearchParams(location.hash.slice(1)).get('access_token');
       if (_naverToken) {
         const handled = await handleNaverToken(_naverToken);
         if (handled) return;
