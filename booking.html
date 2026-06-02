@@ -270,8 +270,9 @@
     const PRICE        = 20000;
     const MAX_SEATS    = 4;
     const KAKAO_KEY    = '38d42dffa61867ec85f0879ccd9906c0';
-    const NAVER_CLIENT = '22ahyWvRWcJQhbylo0QI';
-    const REDIRECT_URI = 'https://mity-reunion.github.io/booking.html';
+    const NAVER_CLIENT   = '22ahyWvRWcJQhbylo0QI';
+    const REDIRECT_URI   = 'https://mity-reunion.github.io/booking.html';
+    const NAVER_PROXY_URL = 'YOUR_CLOUD_FUNCTION_URL'; // 배포 후 교체
 
     function loginNaver() {
       const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -373,18 +374,30 @@
 
 
 
-    // 네이버 콜백 처리 — Naver API는 CORS를 허용하지 않으므로 토큰으로 ID 생성
+    // 네이버 콜백 처리 — Cloud Function 프록시를 통해 사용자 정보 조회
     async function handleNaverToken(token) {
       if (!token) return false;
-      currentUser = {
-        id: 'naver_' + token.slice(-16),
-        name: '네이버 사용자',
-        provider: 'naver'
-      };
-      sessionStorage.setItem('naver_user', JSON.stringify(currentUser));
-      history.replaceState({}, '', location.pathname);
-      await afterLogin();
-      return true;
+      try {
+        const res = await fetch(NAVER_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json();
+        if (data.resultcode === '00') {
+          const name = data.response?.name || '네이버 사용자';
+          const id   = data.response?.id   || ('naver_' + Date.now());
+          currentUser = { id: 'naver_' + id, name, provider: 'naver' };
+          sessionStorage.setItem('naver_user', JSON.stringify(currentUser));
+          history.replaceState({}, '', location.pathname);
+          await afterLogin();
+          return true;
+        }
+        console.error('네이버 사용자 정보 오류', data);
+      } catch(e) {
+        console.error('네이버 프록시 오류', e);
+      }
+      return false;
     }
 
     // ── 로그인 후 처리 ──
