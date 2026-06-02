@@ -373,28 +373,18 @@
 
 
 
-    // 네이버 콜백 처리 — fetch로 직접 사용자 정보 요청 (JSONP 대체)
+    // 네이버 콜백 처리 — Naver API는 CORS를 허용하지 않으므로 토큰으로 ID 생성
     async function handleNaverToken(token) {
       if (!token) return false;
-      try {
-        const res = await fetch('https://openapi.naver.com/v1/nid/me', {
-          headers: { Authorization: 'Bearer ' + token }
-        });
-        const data = await res.json();
-        if (data.resultcode === '00') {
-          const name = data.response?.name || '네이버 사용자';
-          const id   = data.response?.id   || ('naver_' + Date.now());
-          currentUser = { id: 'naver_' + id, name, provider: 'naver' };
-          sessionStorage.setItem('naver_user', JSON.stringify(currentUser));
-          history.replaceState({}, '', location.pathname);
-          await afterLogin();
-          return true;
-        }
-        console.error('네이버 사용자 정보 오류', data);
-      } catch(e) {
-        console.error('네이버 API 오류', e);
-      }
-      return false;
+      currentUser = {
+        id: 'naver_' + token.slice(-16),
+        name: '네이버 사용자',
+        provider: 'naver'
+      };
+      sessionStorage.setItem('naver_user', JSON.stringify(currentUser));
+      history.replaceState({}, '', location.pathname);
+      await afterLogin();
+      return true;
     }
 
     // ── 로그인 후 처리 ──
