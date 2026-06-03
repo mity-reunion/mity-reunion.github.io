@@ -296,6 +296,13 @@
 
     // ── 페이지 진입 시 로그인 상태 복원 ──
     window.addEventListener('load', async () => {
+      // 카카오 콜백 처리 (code가 있으면 카카오 redirect 완료)
+      const _code = new URLSearchParams(location.search).get('code');
+      if (_code) {
+        const handled = await handleKakaoCallback(_code);
+        if (handled) return;
+      }
+
       // 네이버 access_token 콜백 처리 (hash 방식)
       const _naverToken = new URLSearchParams(location.hash.slice(1)).get('access_token');
       if (_naverToken) {
@@ -322,32 +329,51 @@
       showPage('login');
     });
 
-    // ── 카카오 로그인 (팝업 방식 — 서버 불필요) ──
+    // ── 카카오 로그인 (auth code redirect 방식) ──
     function loginKakao() {
-      Kakao.Auth.login({
-        success: async (authObj) => {
-          Kakao.Auth.setAccessToken(authObj.access_token);
-          try {
-            const info = await new Promise((res, rej) =>
-              Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
-            );
-            currentUser = {
-              id: String(info.id),
-              name: info.kakao_account?.profile?.nickname || '카카오 사용자',
-              provider: 'kakao',
-            };
-            sessionStorage.setItem('kakao_user', JSON.stringify(currentUser));
-            await afterLogin();
-          } catch (e) {
-            console.error('카카오 사용자 정보 오류', e);
-            showToast('카카오 로그인 중 오류가 발생했습니다.');
-          }
-        },
-        fail: (err) => {
-          console.error('카카오 로그인 실패', err);
+      Kakao.Auth.authorize({ redirectUri: REDIRECT_URI });
+    }
+
+    async function handleKakaoCallback(code) {
+      try {
+        const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: KAKAO_KEY,
+            redirect_uri: REDIRECT_URI,
+            code,
+          }),
+        });
+        const token = await tokenRes.json();
+        if (!token.access_token) {
+          console.error('카카오 토큰 오류', token);
           showToast('카카오 로그인에 실패했습니다.');
-        },
-      });
+          history.replaceState({}, '', location.pathname);
+          showPage('login');
+          return false;
+        }
+        Kakao.Auth.setAccessToken(token.access_token);
+        const info = await new Promise((res, rej) =>
+          Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
+        );
+        currentUser = {
+          id: String(info.id),
+          name: info.kakao_account?.profile?.nickname || '카카오 사용자',
+          provider: 'kakao',
+        };
+        sessionStorage.setItem('kakao_user', JSON.stringify(currentUser));
+        history.replaceState({}, '', location.pathname);
+        await afterLogin();
+        return true;
+      } catch (e) {
+        console.error('카카오 콜백 오류', e);
+        showToast('카카오 로그인 중 오류가 발생했습니다.');
+        history.replaceState({}, '', location.pathname);
+        showPage('login');
+        return false;
+      }
     }
 
 
