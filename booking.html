@@ -269,7 +269,8 @@
     // ── 상수 ──
     const PRICE        = 20000;
     const MAX_SEATS    = 4;
-    const KAKAO_KEY    = '38d42dffa61867ec85f0879ccd9906c0';
+    const KAKAO_KEY    = '38d42dffa61867ec85f0879ccd9906c0'; // JS 키 (SDK 초기화용)
+    const KAKAO_REST_KEY = 'd22b46a4c81dd323bb1a16057ecea868'; // REST API 키 (토큰 교환용)
     const NAVER_CLIENT   = '22ahyWvRWcJQhbylo0QI';
     const REDIRECT_URI   = 'https://mity-reunion.github.io/booking.html';
     const NAVER_PROXY_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/naverProxy';
@@ -341,7 +342,7 @@
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: new URLSearchParams({
             grant_type: 'authorization_code',
-            client_id: KAKAO_KEY,
+            client_id: KAKAO_REST_KEY,
             redirect_uri: REDIRECT_URI,
             code,
           }),
