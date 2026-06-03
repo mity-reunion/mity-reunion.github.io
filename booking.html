@@ -62,8 +62,8 @@
     .btn-logout:hover { color: var(--white); border-color: rgba(255,255,255,0.4); }
 
     /* PAGES */
-    .page { display: none; min-height: 100vh; }
-    .page.active { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px 60px; }
+    .page { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px 60px; min-height: 100vh; opacity: 0; pointer-events: none; position: absolute; inset: 0; transition: opacity 0.35s ease; }
+    .page.active { opacity: 1; pointer-events: auto; position: relative; }
 
     /* ── 로그인 ── */
     .login-box { width: min(400px, 90vw); display: flex; flex-direction: column; align-items: center; }
@@ -573,9 +573,19 @@
 
     // ── 유틸 ──
     function showPage(name) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       const map = { login:'pageLogin', seat:'pageSeat', done:'pageDone' };
-      document.getElementById(map[name]).classList.add('active');
+      const next = document.getElementById(map[name]);
+      const current = document.querySelector('.page.active');
+      if (current && current !== next) {
+        current.classList.remove('active');
+        // 페이드 아웃 후 페이드 인
+        setTimeout(() => {
+          next.classList.add('active');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 200);
+      } else {
+        next.classList.add('active');
+      }
       document.getElementById('navStep').textContent =
         name === 'seat' ? '좌석 선택' : name === 'done' ? '예매 완료' : '로그인';
     }
