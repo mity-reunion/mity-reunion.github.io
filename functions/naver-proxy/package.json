@@ -5,6 +5,10 @@
   "engines": {
     "node": "20"
   },
+  "scripts": {
+    "start": "functions-framework --target=naverProxy",
+    "deploy": "gcloud functions deploy naverProxy --gen2 --runtime=nodejs20 --region=asia-northeast3 --source=. --entry-point=naverProxy --trigger-http --allow-unauthenticated --set-env-vars ALLOWED_ORIGIN=https://mity-reunion.github.io"
+  },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.0.0"
   }

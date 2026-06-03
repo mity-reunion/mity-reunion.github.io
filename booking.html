@@ -272,7 +272,7 @@
     const KAKAO_KEY    = '38d42dffa61867ec85f0879ccd9906c0';
     const NAVER_CLIENT   = '22ahyWvRWcJQhbylo0QI';
     const REDIRECT_URI   = 'https://mity-reunion.github.io/booking.html';
-    const NAVER_PROXY_URL = 'YOUR_CLOUD_FUNCTION_URL'; // 배포 후 교체
+    const NAVER_PROXY_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/naverProxy';
 
     function loginNaver() {
       const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -296,12 +296,6 @@
 
     // ── 페이지 진입 시 로그인 상태 복원 ──
     window.addEventListener('load', async () => {
-      // 카카오 콜백 처리
-      if (new URLSearchParams(location.search).get('code') && !new URLSearchParams(location.search).get('state')) {
-        const handled = await handleKakaoCallback();
-        if (handled) { await afterLogin(); return; }
-      }
-
       // 네이버 access_token 콜백 처리 (hash 방식)
       const _naverToken = new URLSearchParams(location.hash.slice(1)).get('access_token');
       if (_naverToken) {
@@ -317,7 +311,7 @@
         return;
       }
 
-      // 세션에 저장된 네이버 유저
+      // 네이버 로그인 복원 (세션)
       const saved = sessionStorage.getItem('naver_user');
       if (saved) {
         currentUser = JSON.parse(saved);
@@ -328,48 +322,32 @@
       showPage('login');
     });
 
-    // ── 카카오 로그인 ──
+    // ── 카카오 로그인 (팝업 방식 — 서버 불필요) ──
     function loginKakao() {
-      Kakao.Auth.authorize({
-        redirectUri: REDIRECT_URI,
+      Kakao.Auth.login({
+        success: async (authObj) => {
+          Kakao.Auth.setAccessToken(authObj.access_token);
+          try {
+            const info = await new Promise((res, rej) =>
+              Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
+            );
+            currentUser = {
+              id: String(info.id),
+              name: info.kakao_account?.profile?.nickname || '카카오 사용자',
+              provider: 'kakao',
+            };
+            sessionStorage.setItem('kakao_user', JSON.stringify(currentUser));
+            await afterLogin();
+          } catch (e) {
+            console.error('카카오 사용자 정보 오류', e);
+            showToast('카카오 로그인 중 오류가 발생했습니다.');
+          }
+        },
+        fail: (err) => {
+          console.error('카카오 로그인 실패', err);
+          showToast('카카오 로그인에 실패했습니다.');
+        },
       });
-    }
-
-    async function handleKakaoCallback() {
-      const code = new URLSearchParams(location.search).get('code');
-      if (!code) return false;
-      try {
-        // 토큰 발급
-        const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            client_id: KAKAO_KEY,
-            redirect_uri: REDIRECT_URI,
-            code,
-          })
-        });
-        const token = await tokenRes.json();
-        if (!token.access_token) return false;
-        Kakao.Auth.setAccessToken(token.access_token);
-
-        // 사용자 정보
-        const info = await new Promise((res, rej) =>
-          Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
-        );
-        currentUser = {
-          id: String(info.id),
-          name: info.kakao_account?.profile?.nickname || '카카오 사용자',
-          provider: 'kakao'
-        };
-        sessionStorage.setItem('kakao_user', JSON.stringify(currentUser));
-        history.replaceState({}, '', location.pathname);
-        return true;
-      } catch(e) {
-        console.error('카카오 콜백 오류', e);
-        return false;
-      }
     }
 
 
@@ -377,12 +355,19 @@
     // 네이버 콜백 처리 — Cloud Function 프록시를 통해 사용자 정보 조회
     async function handleNaverToken(token) {
       if (!token) return false;
+      if (NAVER_PROXY_URL === 'YOUR_CLOUD_FUNCTION_URL') {
+        showPage('login');
+        showToast('네이버 로그인 서버가 아직 설정되지 않았습니다.');
+        history.replaceState({}, '', location.pathname);
+        return false;
+      }
       try {
         const res = await fetch(NAVER_PROXY_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),
         });
+        if (!res.ok) throw new Error('프록시 응답 오류: ' + res.status);
         const data = await res.json();
         if (data.resultcode === '00') {
           const name = data.response?.name || '네이버 사용자';
@@ -394,9 +379,13 @@
           return true;
         }
         console.error('네이버 사용자 정보 오류', data);
+        showToast('네이버 사용자 정보를 가져올 수 없습니다.');
       } catch(e) {
         console.error('네이버 프록시 오류', e);
+        showToast('네이버 로그인 중 오류가 발생했습니다.');
       }
+      history.replaceState({}, '', location.pathname);
+      showPage('login');
       return false;
     }
 
