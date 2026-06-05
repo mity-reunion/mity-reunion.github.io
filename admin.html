@@ -81,7 +81,7 @@
     .seat.booked   { background: rgba(204,34,0,0.55); border-color: #cc2200; }
     .seat.blocked  { background: rgba(251,146,60,0.55); border-color: #f97316; }
     .seat.wc-seat  { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); }
-    .seat.checked-in { background: rgba(70,70,70,0.75) !important; border-color: rgba(110,110,110,0.6) !important; }
+    .seat.checked-in { background: rgba(139,92,246,0.6) !important; border-color: rgba(167,139,250,0.7) !important; }
     .seat.search-match { outline: 2px solid #facc15; outline-offset: 2px; }
     .seat.selected-info { outline: 2px solid #fff; outline-offset: 2px; }
 
@@ -172,7 +172,7 @@
         <div class="leg"><div class="leg-dot" style="background:rgba(204,34,0,0.55);border:1px solid #cc2200"></div>예매됨</div>
         <div class="leg"><div class="leg-dot" style="background:rgba(251,146,60,0.55);border:1px solid #f97316"></div>예약 좌석</div>
         <div class="leg"><div class="leg-dot" style="background:rgba(56,189,248,0.2);border:1px solid rgba(56,189,248,0.5)"></div>휠체어석</div>
-        <div class="leg"><div class="leg-dot" style="background:rgba(70,70,70,0.75);border:1px solid rgba(110,110,110,0.6)"></div>티켓 수령 완료</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(139,92,246,0.6);border:1px solid rgba(167,139,250,0.7)"></div>티켓 수령 완료</div>
       </div>
     </div>
 
@@ -185,19 +185,50 @@
 
 <script>
   // ── 관리자 인증 ──
-  const ADMIN_ID = 'admin';
-  const ADMIN_PW = 'mity260711';
+  async function hashPw(pw) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
 
-  function doLogin() {
-    const id = document.getElementById('inputId').value;
-    const pw = document.getElementById('inputPw').value;
-    if (id === ADMIN_ID && pw === ADMIN_PW) {
-      sessionStorage.setItem('admin_auth', '1');
-      showDashboard();
-    } else {
+  async function doLogin() {
+    const id  = document.getElementById('inputId').value.trim();
+    const pw  = document.getElementById('inputPw').value;
+    const btn = document.querySelector('.btn-login');
+    btn.disabled = true;
+    try {
+      const waitDb = () => new Promise(res => {
+        const t = setInterval(() => { if (window._db) { clearInterval(t); res(); } }, 50);
+      });
+      await waitDb();
+      const { doc, getDoc } = window._fs;
+      const snap = await getDoc(doc(window._db, 'admin', 'credentials'));
+      if (!snap.exists()) throw new Error('no credentials');
+      const creds  = snap.data();
+      const pwHash = await hashPw(pw);
+      if (id === creds.id && pwHash === creds.pwHash) {
+        sessionStorage.setItem('admin_auth', '1');
+        showDashboard();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    } catch {
       document.getElementById('loginError').style.display = 'block';
+    } finally {
+      btn.disabled = false;
     }
   }
+
+  // 최초 1회 브라우저 콘솔에서 실행: setupAdmin('admin', '새비밀번호')
+  window.setupAdmin = async function(id, pw) {
+    const waitDb = () => new Promise(res => {
+      const t = setInterval(() => { if (window._db) { clearInterval(t); res(); } }, 50);
+    });
+    await waitDb();
+    const { doc, setDoc } = window._fs;
+    const pwHash = await hashPw(pw);
+    await setDoc(doc(window._db, 'admin', 'credentials'), { id, pwHash });
+    console.log('✓ 관리자 계정이 Firestore에 저장되었습니다.');
+  };
 
   function doLogout() {
     sessionStorage.removeItem('admin_auth');
@@ -401,8 +432,8 @@
     const snap = await getDoc(doc(db, 'seats', 'reserved'));
     const existing = snap.exists() ? (snap.data().list || []) : [];
     await setDoc(doc(db, 'seats', 'reserved'), { list: existing.filter(s => !seatIds.includes(s)) });
-    seatIds.forEach(s => delete checkins[s]);
-    await setDoc(doc(db, 'seats', 'checkins'), checkins);
+    seatIds.forEach(s => { delete checkins[s]; });
+    await setDoc(doc(db, 'seats', 'checkins'), { ...checkins });
     await loadData();
     buildMaps(); updateStats();
     selectedId = null;
