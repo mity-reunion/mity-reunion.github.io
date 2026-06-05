@@ -41,10 +41,12 @@
     .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .nav-hamburger.open span:nth-child(2) { opacity: 0; }
     .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .mobile-menu { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 99; flex-direction: column; align-items: center; justify-content: center; }
+    .mobile-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 98; }
+    .mobile-backdrop.open { display: block; }
+    .mobile-menu { display: none; position: fixed; top: 0; right: 0; bottom: 0; width: min(220px, 72vw); background: #0a0a0a; border-left: 1px solid rgba(255,255,255,0.1); z-index: 99; flex-direction: column; align-items: center; justify-content: center; }
     .mobile-menu.open { display: flex; }
     .mobile-menu ul { list-style: none; display: flex; flex-direction: column; gap: 36px; text-align: center; }
-    .mobile-menu a { color: var(--white); text-decoration: none; font-family: 'Noto Sans KR', sans-serif; font-size: 1.4rem; font-weight: 900; letter-spacing: 0.25em; transition: opacity 0.2s; }
+    .mobile-menu a { color: var(--white); text-decoration: none; font-family: 'Noto Sans KR', sans-serif; font-size: 1.1rem; font-weight: 900; letter-spacing: 0.25em; transition: opacity 0.2s; }
     .mobile-menu a:hover { opacity: 0.5; }
 
     #hero {
@@ -219,6 +221,7 @@
       <span></span><span></span><span></span>
     </button>
   </nav>
+  <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMenu()"></div>
   <div class="mobile-menu" id="mobileMenu">
     <ul>
       <li><a href="#about" onclick="closeMenu()">공연소개</a></li>
@@ -623,10 +626,12 @@
   <script>
     function toggleMenu() {
       document.getElementById('mobileMenu').classList.toggle('open');
+      document.getElementById('mobileBackdrop').classList.toggle('open');
       document.getElementById('navHamburger').classList.toggle('open');
     }
     function closeMenu() {
       document.getElementById('mobileMenu').classList.remove('open');
+      document.getElementById('mobileBackdrop').classList.remove('open');
       document.getElementById('navHamburger').classList.remove('open');
     }
   </script>

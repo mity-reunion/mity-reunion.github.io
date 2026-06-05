@@ -238,6 +238,22 @@
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
     .fade-up { animation: fadeUp 0.4s ease forwards; }
 
+    .book-hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; z-index: 101; }
+    .book-hamburger span { display: block; width: 22px; height: 2px; background: var(--white); transition: transform 0.25s, opacity 0.25s; }
+    .book-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .book-hamburger.open span:nth-child(2) { opacity: 0; }
+    .book-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .book-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 98; }
+    .book-backdrop.open { display: block; }
+    .book-side-menu { display: none; position: fixed; top: 0; right: 0; bottom: 0; width: min(220px, 72vw); background: #0a0a0a; border-left: 1px solid rgba(255,255,255,0.1); z-index: 99; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+    .book-side-menu.open { display: flex; }
+    .book-menu-user { font-size: 0.75rem; color: rgba(255,255,255,0.45); text-align: center; padding: 0 16px; word-break: break-all; }
+    .book-menu-logout { font-size: 0.82rem; color: var(--white); background: none; border: 1px solid rgba(255,255,255,0.25); border-radius: 4px; padding: 8px 24px; cursor: pointer; font-family: inherit; transition: border-color 0.15s; }
+    .book-menu-logout:hover { border-color: rgba(255,255,255,0.6); }
+    @media (max-width: 520px) {
+      .nav-right { display: none; }
+      .book-hamburger { display: flex; }
+    }
     @media (max-width: 680px) {
       nav { padding: 16px 20px; }
     }
@@ -252,7 +268,15 @@
       <span class="nav-step" id="navStep">로그인</span>
       <button class="btn-logout" id="btnLogout" style="display:none" onclick="logout()">로그아웃</button>
     </div>
+    <button class="book-hamburger" id="bookHamburger" onclick="toggleBookMenu()" aria-label="메뉴">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
+  <div class="book-backdrop" id="bookBackdrop" onclick="closeBookMenu()"></div>
+  <div class="book-side-menu" id="bookSideMenu">
+    <span class="book-menu-user" id="navUserMobile"></span>
+    <button class="book-menu-logout" id="btnLogoutMobile" style="display:none" onclick="logout(); closeBookMenu()">로그아웃</button>
+  </div>
 
   <!-- 로딩 -->
   <div class="page active" id="pageLoading">
@@ -562,6 +586,8 @@
     async function afterLogin() {
       document.getElementById('navUser').textContent = currentUser.email;
       document.getElementById('btnLogout').style.display = '';
+      document.getElementById('navUserMobile').textContent = currentUser.email;
+      document.getElementById('btnLogoutMobile').style.display = '';
       await loadReserved();
 
       // 전화번호로 중복 예매 확인
@@ -748,6 +774,8 @@
       selected.clear();
       document.getElementById('navUser').textContent = '';
       document.getElementById('btnLogout').style.display = 'none';
+      document.getElementById('navUserMobile').textContent = '';
+      document.getElementById('btnLogoutMobile').style.display = 'none';
       showPage('email');
     }
 
@@ -930,7 +958,7 @@
         next.classList.add('active');
       }
       document.getElementById('navStep').textContent =
-        name === 'seat' ? '좌석 선택' : name === 'done' ? '예매 완료' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : '이메일 인증';
+        name === 'seat' ? '좌석 선택' : name === 'done' ? '' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : '이메일 인증';
     }
 
     let toastTimer;
@@ -939,6 +967,18 @@
       t.textContent = msg; t.classList.add('show');
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+    }
+  </script>
+  <script>
+    function toggleBookMenu() {
+      document.getElementById('bookSideMenu').classList.toggle('open');
+      document.getElementById('bookBackdrop').classList.toggle('open');
+      document.getElementById('bookHamburger').classList.toggle('open');
+    }
+    function closeBookMenu() {
+      document.getElementById('bookSideMenu').classList.remove('open');
+      document.getElementById('bookBackdrop').classList.remove('open');
+      document.getElementById('bookHamburger').classList.remove('open');
     }
   </script>
 </body>
