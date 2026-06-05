@@ -206,7 +206,8 @@
       const accounts = snap.data().accounts || {};
       const pwHash   = await hashPw(pw);
       if (accounts[id] && accounts[id] === pwHash) {
-        sessionStorage.setItem('admin_auth', '1');
+        sessionStorage.setItem('admin_auth', id);
+        currentAdmin = id;
         showDashboard();
       } else {
         document.getElementById('loginError').style.display = 'block';
@@ -225,15 +226,17 @@
   }
 
   window.addEventListener('load', () => {
-    if (sessionStorage.getItem('admin_auth')) showDashboard();
+    const saved = sessionStorage.getItem('admin_auth');
+    if (saved) { currentAdmin = saved; showDashboard(); }
   });
 
   // ── 데이터 ──
+  let currentAdmin = null;
   let bookedSeats  = new Set();
   let blockedSeats = new Set();
-  let blockedInfo  = {};        // seatId → { target }
+  let blockedInfo  = {};        // seatId → { target, by }
   let bookingMap   = {};        // seatId → booking 객체
-  let checkins     = {};        // seatId → boolean
+  let checkins     = {};        // seatId → { by } | true(구버전)
   const TOTAL = 7*16 + 4*12 + 4;
 
   async function showDashboard() {
@@ -347,9 +350,10 @@
     const btn = document.querySelector(`[data-id="${id}"]`);
     if (btn) btn.classList.add('selected-info');
 
-    const booking   = bookingMap[id];
-    const isBlocked = blockedSeats.has(id);
-    const isChecked = !!checkins[id];
+    const booking    = bookingMap[id];
+    const isBlocked  = blockedSeats.has(id);
+    const isChecked  = !!checkins[id];
+    const checkinBy  = checkins[id]?.by || null;
     const panel = document.getElementById('infoContent');
     let html = `<div class="info-seat-id">${seatLabel(id)}</div>`;
 
@@ -363,7 +367,7 @@
         <div class="info-row"><span class="info-key">예매일시</span><span class="info-val">${fmtDate(booking.createdAt)}</span></div>
         <label class="checkin-row">
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${id}', this.checked)"/>
-          <span>티켓 수령 완료</span>
+          <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${checkinBy})</span>` : ''}</span>
         </label>
         <div class="cancel-section">
           <p class="cancel-label">예매 취소 (취소하려면 아래에 <strong style="color:#ff6b6b">예매취소</strong> 입력)</p>
@@ -372,13 +376,15 @@
             onclick="doCancelBooking('${booking.ref}', decodeURIComponent('${seats64}'))">예매 취소</button>
         </div>`;
     } else if (isBlocked) {
-      const target = blockedInfo[id]?.target || '';
+      const target    = blockedInfo[id]?.target || '';
+      const blockedBy = blockedInfo[id]?.by || '';
       html += `<div style="font-size:0.8rem;color:#f97316;margin:6px 0 10px;">예약 좌석</div>`;
-      if (target) html += `<div class="info-row"><span class="info-key">대상자</span><span class="info-val">${target}</span></div>`;
+      if (target)    html += `<div class="info-row"><span class="info-key">대상자</span><span class="info-val">${target}</span></div>`;
+      if (blockedBy) html += `<div class="info-row"><span class="info-key">예약 처리</span><span class="info-val">${blockedBy}</span></div>`;
       html += `
         <label class="checkin-row">
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${id}', this.checked)"/>
-          <span>티켓 수령 완료</span>
+          <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${checkinBy})</span>` : ''}</span>
         </label>
         <button class="btn-unblock" onclick="doUnblock('${id}')">예약 해제</button>`;
     } else {
@@ -393,7 +399,7 @@
   async function doBlock(id) {
     const target = (document.getElementById('targetInput')?.value || '').trim();
     blockedSeats.add(id);
-    blockedInfo[id] = { target };
+    blockedInfo[id] = { target, by: currentAdmin };
     const { doc, setDoc } = window._fs;
     await setDoc(doc(window._db, 'seats', 'adminBlocked'), {
       list: [...blockedSeats], info: blockedInfo,
@@ -430,7 +436,7 @@
   }
 
   async function toggleCheckin(id, checked) {
-    if (checked) checkins[id] = true;
+    if (checked) checkins[id] = { by: currentAdmin };
     else delete checkins[id];
     const { doc, setDoc } = window._fs;
     await setDoc(doc(window._db, 'seats', 'checkins'), checkins);
