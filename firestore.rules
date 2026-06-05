@@ -13,5 +13,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    // 사용자 프로필 (이메일-전화번호 매핑)
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }

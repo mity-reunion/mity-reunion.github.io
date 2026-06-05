@@ -393,12 +393,12 @@
           || localStorage.getItem('emailForSignIn');
         if (email) {
           signInWithEmailLink(auth, email, pendingUrl)
-            .then(result => {
+            .then(async result => {
               sessionStorage.removeItem('emailForSignIn');
               localStorage.removeItem('emailForSignIn');
               history.replaceState({}, '', location.pathname);
               currentUser = { id: result.user.uid, email: result.user.email, phone: '' };
-              showPage('phone');
+              await loadPhoneAndProceed();
             })
             .catch(e => {
               console.error('이메일 인증 오류', e);
@@ -428,7 +428,7 @@
             await afterLogin();
           } else {
             currentUser = { id: user.uid, email: user.email, phone: '' };
-            showPage('phone');
+            await loadPhoneAndProceed();
           }
         } else {
           showPage('email');
@@ -455,7 +455,7 @@
           localStorage.removeItem('emailForSignIn');
           delete window._pendingSignInUrl;
           currentUser = { id: result.user.uid, email: result.user.email, phone: '' };
-          showPage('phone');
+          await loadPhoneAndProceed();
           return;
         } catch(e) {
           showToast('인증 실패: 이메일을 확인하거나 새 링크를 받아주세요.');
@@ -493,13 +493,43 @@
     }
 
     // ── 전화번호 제출 ──
+    // ── Firestore에서 전화번호 조회 후 분기 ──
+    async function loadPhoneAndProceed() {
+      try {
+        const { doc, getDoc } = window._firestoreLib;
+        const snap = await getDoc(doc(window._db, 'users', currentUser.id));
+        if (snap.exists() && snap.data().phone) {
+          currentUser.phone = snap.data().phone;
+          sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
+          await afterLogin();
+          return;
+        }
+      } catch(e) { console.warn('사용자 정보 조회 실패', e); }
+      showPage('phone');
+    }
+
     async function submitPhone() {
       const raw = document.getElementById('phoneInput').value.trim();
       const phone = normalizePhone(raw);
       if (phone.length < 10) { showToast('올바른 전화번호를 입력해주세요.'); return; }
-      currentUser.phone = phone;
-      sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
-      await afterLogin();
+      const btn = document.querySelector('#pagePhone .btn-primary');
+      btn.disabled = true; btn.textContent = '저장 중...';
+      try {
+        currentUser.phone = phone;
+        const { doc, setDoc } = window._firestoreLib;
+        await setDoc(doc(window._db, 'users', currentUser.id), {
+          email: currentUser.email,
+          phone,
+          updatedAt: new Date().toISOString(),
+        });
+        sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
+        await afterLogin();
+      } catch(e) {
+        console.error('전화번호 저장 오류', e);
+        showToast('저장 중 오류가 발생했습니다.');
+      } finally {
+        btn.disabled = false; btn.textContent = '다음';
+      }
     }
 
     // ── 로그인 후 처리 ──
