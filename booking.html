@@ -108,7 +108,7 @@
     .floor-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.2em; margin: 6px 0 2px; align-self: flex-start; padding-left: 26px; }
     .seat-map  { display: flex; flex-direction: column; gap: 5px; align-items: center; }
     .seat-row  { display: flex; align-items: center; gap: 5px; }
-    .row-label { width: 18px; text-align: center; font-size: 0.62rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+    .seat-aisle { width: 22px; text-align: center; font-size: 0.58rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
 
     .seat {
       width: 26px; height: 22px; border-radius: 3px;
@@ -129,8 +129,8 @@
     }
     .seat.reserved::before { transform: rotate(45deg); }
     .seat.reserved::after  { transform: rotate(-45deg); }
-    .seat.wc-seat   { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.55); font-size: 0.48rem; color: rgba(56,189,248,0.9); font-weight: 700; }
-    .seat.wc-seat.selected { background: #38bdf8 !important; border-color: #38bdf8 !important; }
+    .seat.wc-seat   { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.55); }
+    .seat.wc-seat.selected { background: #38bdf8 !important; border-color: #38bdf8 !important; font-size: 0.48rem; color: #002a38; font-weight: 900; }
     .seat-gap { width: 14px; }
 
     /* 범례 */
@@ -559,18 +559,21 @@
       buildB2F(); buildB1F();
     }
 
+    function makeAisle(row) {
+      const el = document.createElement('div');
+      el.className = 'seat-aisle';
+      el.textContent = row;
+      return el;
+    }
+
     function buildB2F() {
       const map = document.getElementById('mapB2F');
       ['A','B','C','D','E','F','G'].forEach(row => {
         const rowEl = document.createElement('div');
         rowEl.className = 'seat-row';
-        const label = document.createElement('div');
-        label.className = 'row-label'; label.textContent = row;
-        rowEl.appendChild(label);
-        for (let s = 1; s <= 16; s++) {
-          if (s === 9) { const g = document.createElement('div'); g.className='seat-gap'; rowEl.appendChild(g); }
-          addSeat(rowEl, `${row}-${s}`, `${row}열 ${s}번`);
-        }
+        for (let s = 1; s <= 8; s++) addSeat(rowEl, `${row}-${s}`, `${row}열 ${s}번`);
+        rowEl.appendChild(makeAisle(row));
+        for (let s = 9; s <= 16; s++) addSeat(rowEl, `${row}-${s}`, `${row}열 ${s}번`);
         map.appendChild(rowEl);
       });
     }
@@ -580,26 +583,18 @@
       ['H','I','J','K'].forEach(row => {
         const rowEl = document.createElement('div');
         rowEl.className = 'seat-row';
-        const label = document.createElement('div');
-        label.className = 'row-label'; label.textContent = row;
-        rowEl.appendChild(label);
-        for (let s = 1; s <= 12; s++) {
-          if (s === 7) { const g = document.createElement('div'); g.className='seat-gap'; rowEl.appendChild(g); }
-          addSeat(rowEl, `${row}-${s}`, `${row}열 ${s}번`);
-        }
+        for (let s = 1; s <= 6; s++) addSeat(rowEl, `${row}-${s}`, `${row}열 ${s}번`);
+        rowEl.appendChild(makeAisle(row));
+        for (let s = 7; s <= 12; s++) addSeat(rowEl, `${row}-${s}`, `${row}열 ${s}번`);
         map.appendChild(rowEl);
       });
-      // L열 — 오른쪽 통로에만 배치
+      // L열 — 왼쪽 빈 공간(6석+5갭=181px) + 통로라벨 + 오른쪽 좌석
       const rowL = document.createElement('div');
       rowL.className = 'seat-row';
-      const labelL = document.createElement('div');
-      labelL.className = 'row-label'; labelL.textContent = 'L';
-      rowL.appendChild(labelL);
-      // 왼쪽 빈 공간 (H~K 왼쪽 6석 + 사이 5간격 너비)
       const spacer = document.createElement('div');
-      spacer.style.cssText = 'width:calc(6*26px + 5*5px);flex-shrink:0;';
+      spacer.style.cssText = 'width:181px;flex-shrink:0;';
       rowL.appendChild(spacer);
-      const gL = document.createElement('div'); gL.className='seat-gap'; rowL.appendChild(gL);
+      rowL.appendChild(makeAisle('L'));
       addSeat(rowL, 'L-WC1', '휠체어석 1', true, '1');
       addSeat(rowL, 'L-WC2', '휠체어석 2', true, '2');
       addSeat(rowL, 'L-1', 'L열 1번');
