@@ -1,6 +1,5 @@
 const functions = require('@google-cloud/functions-framework');
 const admin = require('firebase-admin');
-const nodemailer = require('nodemailer');
 
 const SA_KEY = process.env.FIREBASE_SA_KEY;
 if (SA_KEY) {
@@ -12,18 +11,8 @@ if (SA_KEY) {
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://mity-reunion.github.io';
 const SITE_URL = 'https://mity-reunion.github.io/booking.html';
-const GMAIL_USER = process.env.GMAIL_USER;
-const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD;
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_SMTP_KEY,
-  },
-});
+const BREVO_API_KEY = process.env.BREVO_SMTP_KEY;
+const SENDER_EMAIL = process.env.BREVO_USER || 'mityreunion@gmail.com';
 
 function setCors(res) {
   res.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -71,12 +60,23 @@ functions.http('emailAuth', async (req, res) => {
       handleCodeInApp: true,
     });
 
-    await transporter.sendMail({
-      from: '"M.I.T.Y REUNION" <mityreunion@gmail.com>',
-      to: email,
-      subject: '[M.I.T.Y REUNION] 예매 인증 메일',
-      html: emailHtml(link),
+    const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { name: 'M.I.T.Y REUNION', email: SENDER_EMAIL },
+        to: [{ email }],
+        subject: '[M.I.T.Y REUNION] 예매 인증 메일',
+        htmlContent: emailHtml(link),
+      }),
     });
+    if (!emailRes.ok) {
+      const err = await emailRes.json();
+      throw new Error('Brevo: ' + JSON.stringify(err));
+    }
 
     res.json({ success: true });
   } catch (e) {
