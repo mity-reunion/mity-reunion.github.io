@@ -47,9 +47,29 @@
     .dashboard-body { display: flex; flex: 1; gap: 0; }
 
     /* 좌석 맵 */
-    .seat-area { flex: 1; padding: 28px; overflow-x: auto; }
-    .stage-label { text-align: center; font-size: 0.65rem; letter-spacing: 0.3em; color: var(--muted); padding: 8px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 16px; }
-    .seat-map { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; margin-bottom: 8px; }
+    .seat-area {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 0 24px; gap: 16px; overflow: hidden;
+    }
+    .seat-scroll-wrap {
+      width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+    .seat-scroll-wrap::-webkit-scrollbar { height: 4px; }
+    .seat-scroll-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+    .seat-inner {
+      display: flex; flex-direction: column; gap: 6px;
+      align-items: center;
+      min-width: max-content; width: max-content;
+      margin: 0 auto; padding: 4px 28px 8px;
+    }
+    .stage-label {
+      width: 100%; text-align: center;
+      font-size: 0.65rem; letter-spacing: 0.3em; color: var(--muted);
+      padding: 8px; border: 1px solid var(--border); border-radius: 4px;
+    }
+    .seat-map { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
     .seat-row { display: flex; align-items: center; gap: 5px; }
     .seat-aisle { width: 22px; text-align: center; font-size: 0.55rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
     .seat {
@@ -62,9 +82,8 @@
     .seat.blocked  { background: rgba(251,146,60,0.55); border-color: #f97316; }
     .seat.wc-seat  { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); }
     .seat.selected-info { outline: 2px solid #fff; outline-offset: 2px; }
-    .seat-gap { width: 14px; flex-shrink: 0; }
 
-    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; padding: 0 20px; }
     .leg { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
     .leg-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
 
@@ -114,10 +133,14 @@
 
   <div class="dashboard-body">
     <div class="seat-area">
-      <div class="stage-label">STAGE</div>
-      <div class="seat-map" id="mapB2F"></div>
-      <div style="height:10px"></div>
-      <div class="seat-map" id="mapB1F"></div>
+      <div class="seat-scroll-wrap">
+        <div class="seat-inner">
+          <div class="stage-label">STAGE</div>
+          <div class="seat-map" id="mapB2F"></div>
+          <div style="height:10px"></div>
+          <div class="seat-map" id="mapB1F"></div>
+        </div>
+      </div>
       <div class="legend">
         <div class="leg"><div class="leg-dot" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25)"></div>선택 가능</div>
         <div class="leg"><div class="leg-dot" style="background:rgba(204,34,0,0.55);border:1px solid #cc2200"></div>예매됨</div>
