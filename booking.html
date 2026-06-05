@@ -194,6 +194,20 @@
     .done-ref   { font-size: 1rem; font-weight: 700; letter-spacing: 0.15em; padding: 14px 24px; border: 1px solid var(--border); border-radius: 4px; }
     .btn-home   { margin-top: 8px; padding: 12px 32px; background: var(--white); color: var(--black); border: none; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.9rem; font-weight: 900; cursor: pointer; box-shadow: 3px 3px 0 var(--red); transition: transform 0.12s; }
     .btn-home:hover { transform: translate(-1px,-1px); }
+    .btn-cancel { margin-top: 4px; padding: 10px 28px; background: none; color: var(--muted); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.8rem; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+    .btn-cancel:hover { color: var(--red); border-color: var(--red); }
+
+    /* 확인 모달 */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal-box { background: #111; border: 1px solid var(--border); border-radius: 8px; padding: 32px 28px; width: min(340px, 88vw); text-align: center; display: flex; flex-direction: column; gap: 16px; }
+    .modal-title { font-size: 1rem; font-weight: 900; }
+    .modal-desc  { font-size: 0.82rem; color: var(--muted); line-height: 1.8; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+    .modal-actions button { flex: 1; padding: 12px; border: none; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
+    .btn-modal-cancel { background: rgba(255,255,255,0.08); color: var(--muted); }
+    .btn-modal-confirm { background: var(--red); color: #fff; }
+    .btn-home:hover { transform: translate(-1px,-1px); }
 
     /* ── 로딩 ── */
     .loading-box { display: flex; flex-direction: column; align-items: center; gap: 20px; }
@@ -222,7 +236,7 @@
 <body>
 
   <nav>
-    <a href="index.html" class="nav-logo">M.I.T.Y</a>
+    <a href="index.html" class="nav-logo">M.I.T.Y REUNION</a>
     <div class="nav-right">
       <span class="nav-user" id="navUser"></span>
       <span class="nav-step" id="navStep">로그인</span>
@@ -326,6 +340,19 @@
       <div class="done-ref" id="doneRef">—</div>
       <p class="done-sub" id="doneSeats"></p>
       <button class="btn-home" onclick="location.href='index.html'">메인으로 돌아가기</button>
+      <button class="btn-cancel" id="btnCancelBooking" style="display:none" onclick="openCancelModal()">예매 취소하기</button>
+    </div>
+  </div>
+
+  <!-- 취소 확인 모달 -->
+  <div class="modal-backdrop" id="cancelModal">
+    <div class="modal-box">
+      <p class="modal-title">예매를 취소하시겠습니까?</p>
+      <p class="modal-desc">취소 후에는 해당 좌석이 다시 선택 가능해집니다.<br>취소된 예매는 되돌릴 수 없습니다.</p>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" onclick="closeCancelModal()">돌아가기</button>
+        <button class="btn-modal-confirm" id="btnConfirmCancel" onclick="confirmCancel()">취소 확정</button>
+      </div>
     </div>
   </div>
 
@@ -508,13 +535,61 @@
     }
 
     // ── 이미 예매된 경우 완료 화면 표시 ──
+    let currentBookingRef = null;
+    let currentBookingSeats = [];
+
     function showExistingBooking(booking) {
+      currentBookingRef = booking.ref;
+      currentBookingSeats = booking.seats || [];
       document.getElementById('doneRef').textContent = booking.ref;
       document.getElementById('doneSeats').textContent =
-        (booking.seats || []).map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+        currentBookingSeats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
       document.querySelector('#pageDone .done-title').textContent = '이미 예매하셨습니다';
       document.querySelector('#pageDone .done-sub').textContent = '아래 예매번호를 공연 당일 보여주세요.';
+      document.getElementById('btnCancelBooking').style.display = '';
       showPage('done');
+    }
+
+    // ── 예매 취소 모달 ──
+    function openCancelModal()  { document.getElementById('cancelModal').classList.add('open'); }
+    function closeCancelModal() { document.getElementById('cancelModal').classList.remove('open'); }
+
+    async function confirmCancel() {
+      const btn = document.getElementById('btnConfirmCancel');
+      btn.disabled = true; btn.textContent = '처리 중...';
+      try {
+        const { doc, updateDoc, getDoc, setDoc } = window._firestoreLib;
+        const db = window._db;
+
+        // 예매 상태를 cancelled로 변경
+        await updateDoc(doc(db, 'bookings', currentBookingRef), { status: 'cancelled' });
+
+        // 예약 좌석 목록에서 해당 좌석 제거
+        const seatDoc = doc(db, 'seats', 'reserved');
+        const snap = await getDoc(seatDoc);
+        const existing = snap.exists() ? (snap.data().list || []) : [];
+        const updated = existing.filter(s => !currentBookingSeats.includes(s));
+        await setDoc(seatDoc, { list: updated });
+
+        closeCancelModal();
+        currentBookingRef = null;
+        currentBookingSeats = [];
+        document.getElementById('btnCancelBooking').style.display = 'none';
+
+        // 예매 완료 화면을 신규 예매용으로 초기화하고 좌석 선택으로 이동
+        document.querySelector('#pageDone .done-title').textContent = '예매 완료!';
+        document.querySelector('#pageDone .done-sub').textContent = '예매가 성공적으로 완료되었습니다.\n공연 당일 예매번호를 보여주세요.';
+        reserved.clear();
+        await loadReserved();
+        seatsBuilt = false;
+        showPage('seat');
+        buildSeats();
+      } catch(e) {
+        console.error('취소 오류', e);
+        showToast('취소 처리 중 오류가 발생했습니다.');
+      } finally {
+        btn.disabled = false; btn.textContent = '취소 확정';
+      }
     }
 
     // ── 전화번호 정규화 (+82 10-xxxx-xxxx → 01012345678) ──
