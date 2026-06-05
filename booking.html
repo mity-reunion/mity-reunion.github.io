@@ -89,18 +89,22 @@
     /* ── 좌석 ── */
     .dot-bg { background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 8px 8px; }
 
-    .seat-page { width: min(900px, 96vw); display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 80px 20px 60px; }
-    .seat-header { text-align: center; }
+    .seat-page { width: 100%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 80px 0 60px; }
+    .seat-header { text-align: center; padding: 0 20px; }
     .seat-header h2 { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 6px; }
     .seat-header p  { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.06em; }
 
-    .seat-layout { width: 100%; display: flex; gap: 24px; align-items: flex-start; }
-    .seat-main   { flex: 1; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    .seat-layout { width: 100%; display: flex; gap: 24px; align-items: flex-start; padding: 0 20px; }
+    .seat-main   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
 
-    .stage { width: 100%; max-width: 580px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; padding: 10px; text-align: center; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3em; color: var(--muted); }
+    /* 객석 스크롤 영역 */
+    .seat-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+    .seat-scroll-inner { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: max-content; padding: 0 4px 4px; }
+
+    .stage { width: 100%; min-width: 420px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; padding: 10px; text-align: center; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3em; color: var(--muted); }
 
     .floor-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.2em; margin: 6px 0 2px; align-self: flex-start; padding-left: 26px; }
-    .seat-map  { width: 100%; display: flex; flex-direction: column; gap: 5px; align-items: center; }
+    .seat-map  { display: flex; flex-direction: column; gap: 5px; align-items: center; }
     .seat-row  { display: flex; align-items: center; gap: 5px; }
     .row-label { width: 18px; text-align: center; font-size: 0.62rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
 
@@ -174,9 +178,8 @@
 
     @media (max-width: 680px) {
       nav { padding: 16px 20px; }
-      .seat-layout { flex-direction: column; }
+      .seat-layout { flex-direction: column; padding: 0 16px; }
       .seat-sidebar { width: 100%; position: static; }
-      .seat { width: 20px; height: 17px; }
     }
   </style>
 </head>
@@ -240,12 +243,16 @@
 
       <div class="seat-layout fade-up">
         <div class="seat-main">
-          <div class="stage">STAGE</div>
-          <p class="floor-label">B2F — 수납객석</p>
-          <div class="seat-map" id="mapB2F"></div>
-          <div style="height:10px"></div>
-          <p class="floor-label">B1F — 고정객석</p>
-          <div class="seat-map" id="mapB1F"></div>
+          <div class="seat-scroll-wrap">
+            <div class="seat-scroll-inner">
+              <div class="stage">STAGE</div>
+              <p class="floor-label">B2F — 수납객석</p>
+              <div class="seat-map" id="mapB2F"></div>
+              <div style="height:10px"></div>
+              <p class="floor-label">B1F — 고정객석</p>
+              <div class="seat-map" id="mapB1F"></div>
+            </div>
+          </div>
           <div class="seat-legend">
             <div class="legend-item"><div class="legend-dot ld-avail"></div>선택 가능</div>
             <div class="legend-item"><div class="legend-dot ld-sel"></div>선택됨</div>
