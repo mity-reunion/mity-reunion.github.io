@@ -187,8 +187,8 @@
     .btn-book:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
     /* ── 완료 ── */
-    .done-box   { width: min(440px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
-    .done-title { font-size: 0.8rem; font-weight: 900; letter-spacing: 0.2em; color: var(--muted); }
+    .done-box   { width: min(440px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding-top: 8px; }
+    .done-title { font-size: 1.3rem; font-weight: 900; letter-spacing: 0.15em; color: var(--white); margin-bottom: 4px; }
     .done-info  { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; }
     .done-row   { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
     .done-row:last-child { border-bottom: none; }
@@ -356,7 +356,7 @@
         </div>
       </div>
       <button class="btn-home" onclick="location.href='index.html'">메인으로 돌아가기</button>
-      <button class="btn-seat-view" onclick="showSeatView()">좌석현황 보기</button>
+      <button class="btn-seat-view" onclick="showSeatView()">좌석현황 보기 / 좌석 변경</button>
       <button class="btn-cancel-red" id="btnCancelBooking" style="display:none" onclick="openCancelModal()">예매 취소하기</button>
     </div>
   </div>
