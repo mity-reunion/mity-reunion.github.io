@@ -133,9 +133,7 @@
     .remove-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 0 2px; transition: color 0.15s; }
     .remove-btn:hover { color: var(--red); }
     .sidebar-empty { font-size: 0.78rem; color: var(--muted); }
-    .sidebar-price { display: flex; justify-content: space-between; align-items: baseline; }
-    .price-label   { font-size: 0.7rem; color: var(--muted); }
-    .price-val     { font-size: 1.1rem; font-weight: 900; }
+
 
     .btn-book {
       width: 100%; padding: 13px; background: var(--white); color: var(--black);
@@ -237,7 +235,7 @@
     <div class="seat-page">
       <div class="seat-header fade-up">
         <h2>좌석 선택</h2>
-        <p>원하는 좌석을 선택해 주세요 · 최대 4석</p>
+        <p>원하는 좌석을 선택해 주세요 · 최대 2석 · 무료</p>
       </div>
 
       <div class="seat-layout fade-up">
@@ -261,10 +259,6 @@
           <div class="sidebar-seats" id="sidebarSeats">
             <p class="sidebar-empty">선택된 좌석이 없습니다</p>
           </div>
-          <div class="sidebar-price">
-            <span class="price-label">합계</span>
-            <span class="price-val" id="totalPrice">₩0</span>
-          </div>
           <button class="btn-book" id="btnBook" disabled onclick="confirmBooking()">예매 확정</button>
         </div>
       </div>
@@ -287,8 +281,7 @@
 
   <script>
     // ── 상수 ──
-    const PRICE        = 20000;
-    const MAX_SEATS    = 4;
+    const MAX_SEATS    = 2;
     const KAKAO_KEY    = '38d42dffa61867ec85f0879ccd9906c0';
     const NAVER_CLIENT   = '22ahyWvRWcJQhbylo0QI';
     const REDIRECT_URI   = 'https://mity-reunion.github.io/booking.html';
@@ -482,7 +475,7 @@
         userName: currentUser.name,
         provider: currentUser.provider,
         seats: [...seats],
-        amount: seats.size * PRICE,
+        amount: 0,
         createdAt: new Date().toISOString(),
         status: 'confirmed'
       });
@@ -583,7 +576,6 @@
           return `<div class="sidebar-seat-item"><span>${lbl}</span><button class="remove-btn" onclick="removeSeat('${id}')">×</button></div>`;
         }).join('');
       }
-      document.getElementById('totalPrice').textContent = `₩${(selected.size * PRICE).toLocaleString()}`;
       document.getElementById('btnBook').disabled = selected.size === 0;
     }
 
@@ -606,8 +598,7 @@
         // UI 완료
         document.getElementById('doneRef').textContent = refNum;
         document.getElementById('doneSeats').textContent =
-          [...selected].map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ') +
-          ` · ₩${(selected.size * PRICE).toLocaleString()}`;
+          [...selected].map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
         selected.clear(); updateSidebar();
         showPage('done');
       } catch(e) {
