@@ -116,21 +116,34 @@
       background: rgba(255,255,255,0.14);
       cursor: pointer; transition: background 0.1s, transform 0.1s; font-size: 0;
     }
-    .seat:hover:not(.reserved):not(.wc-seat) { background: rgba(255,255,255,0.3); transform: scale(1.1); }
-    .seat.selected  { background: var(--white); border-color: var(--white); }
-    .seat.reserved  { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.06); cursor: not-allowed; }
-    .seat.wc-seat   { background: rgba(56,189,248,0.15); border-color: rgba(56,189,248,0.4); }
-    .seat.wc-seat.selected { background: #38bdf8; border-color: #38bdf8; }
+    .seat:hover:not(.reserved):not(.wc-seat):not(.selected) { background: rgba(255,255,255,0.3); transform: scale(1.1); }
+    .seat.selected  { background: #ffffff !important; border-color: #ffffff !important; }
+    /* 예매 완료: X 표시 */
+    .seat.reserved  {
+      background: transparent; border-color: rgba(255,255,255,0.25); cursor: not-allowed;
+      position: relative; overflow: hidden;
+    }
+    .seat.reserved::before, .seat.reserved::after {
+      content: ''; position: absolute; inset: 0; margin: auto;
+      width: 60%; height: 1.5px; background: rgba(255,255,255,0.45); border-radius: 1px;
+    }
+    .seat.reserved::before { transform: rotate(45deg); }
+    .seat.reserved::after  { transform: rotate(-45deg); }
+    .seat.wc-seat   { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.55); }
+    .seat.wc-seat.selected { background: #38bdf8 !important; border-color: #38bdf8 !important; }
     .seat-gap { width: 14px; }
 
     /* 범례 */
     .seat-legend { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 0 20px; }
     .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
     .legend-dot  { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
-    .ld-avail  { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); }
+    .ld-avail  { background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.35); }
     .ld-sel    { background: var(--white); }
-    .ld-res    { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
-    .ld-wc     { background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.4); }
+    .ld-res    { background: transparent; border: 1px solid rgba(255,255,255,0.25); position: relative; overflow: hidden; }
+    .ld-res::before, .ld-res::after { content: ''; position: absolute; inset: 0; margin: auto; width: 60%; height: 1.5px; background: rgba(255,255,255,0.45); border-radius: 1px; }
+    .ld-res::before { transform: rotate(45deg); }
+    .ld-res::after  { transform: rotate(-45deg); }
+    .ld-wc     { background: rgba(56,189,248,0.2); border: 1px solid rgba(56,189,248,0.55); }
 
     /* 선택 좌석 요약 (하단) */
     .seat-summary { width: min(480px, 90vw); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
