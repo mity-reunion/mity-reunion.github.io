@@ -155,6 +155,18 @@
     .btn-home   { margin-top: 8px; padding: 12px 32px; background: var(--white); color: var(--black); border: none; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.9rem; font-weight: 900; cursor: pointer; box-shadow: 3px 3px 0 var(--red); transition: transform 0.12s; }
     .btn-home:hover { transform: translate(-1px,-1px); }
 
+    /* ── 로딩 ── */
+    .loading-box { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.12);
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.15em; }
+
     /* 토스트 */
     .toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(30,30,30,0.95); border: 1px solid var(--border); color: var(--white); padding: 12px 24px; border-radius: 4px; font-size: 0.82rem; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; z-index: 999; white-space: nowrap; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -181,8 +193,16 @@
     </div>
   </nav>
 
+  <!-- 로딩 -->
+  <div class="page active" id="pageLoading">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p class="loading-text">잠시만 기다려주세요</p>
+    </div>
+  </div>
+
   <!-- 로그인 -->
-  <div class="page active" id="pageLogin">
+  <div class="page" id="pageLogin">
     <div class="login-box fade-up">
       <h1 class="login-title">예매하기</h1>
       <p class="login-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
@@ -294,23 +314,23 @@
     // ── 카카오 초기화 ──
     Kakao.init(KAKAO_KEY);
 
-    // ── 페이지 진입 시 로그인 상태 복원 ──
+    // ── 페이지 진입 시 로그인 상태 복원 (로딩 페이지가 기본 표시됨) ──
     window.addEventListener('load', async () => {
-      // 카카오 콜백 처리 (code가 있으면 카카오 redirect 완료)
+      // 카카오 콜백 처리
       const _code = new URLSearchParams(location.search).get('code');
       if (_code) {
-        const handled = await handleKakaoCallback(_code);
-        if (handled) return;
+        await handleKakaoCallback(_code);
+        return;
       }
 
       // 네이버 access_token 콜백 처리 (hash 방식)
       const _naverToken = new URLSearchParams(location.hash.slice(1)).get('access_token');
       if (_naverToken) {
-        const handled = await handleNaverToken(_naverToken);
-        if (handled) return;
+        await handleNaverToken(_naverToken);
+        return;
       }
 
-      // 카카오 로그인 복원 (세션)
+      // 세션 복원 (카카오)
       const savedKakao = sessionStorage.getItem('kakao_user');
       if (savedKakao) {
         currentUser = JSON.parse(savedKakao);
@@ -318,14 +338,15 @@
         return;
       }
 
-      // 네이버 로그인 복원 (세션)
-      const saved = sessionStorage.getItem('naver_user');
-      if (saved) {
-        currentUser = JSON.parse(saved);
+      // 세션 복원 (네이버)
+      const savedNaver = sessionStorage.getItem('naver_user');
+      if (savedNaver) {
+        currentUser = JSON.parse(savedNaver);
         afterLogin();
         return;
       }
 
+      // 미로그인 → 로그인 페이지
       showPage('login');
     });
 
@@ -598,21 +619,20 @@
 
     // ── 유틸 ──
     function showPage(name) {
-      const map = { login:'pageLogin', seat:'pageSeat', done:'pageDone' };
+      const map = { loading:'pageLoading', login:'pageLogin', seat:'pageSeat', done:'pageDone' };
       const next = document.getElementById(map[name]);
       const current = document.querySelector('.page.active');
       if (current && current !== next) {
         current.classList.remove('active');
-        // 페이드 아웃 후 페이드 인
         setTimeout(() => {
           next.classList.add('active');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          if (name !== 'loading') window.scrollTo({ top: 0, behavior: 'smooth' });
         }, 200);
       } else {
         next.classList.add('active');
       }
       document.getElementById('navStep').textContent =
-        name === 'seat' ? '좌석 선택' : name === 'done' ? '예매 완료' : '로그인';
+        name === 'seat' ? '좌석 선택' : name === 'done' ? '예매 완료' : name === 'loading' ? '' : '로그인';
     }
 
     let toastTimer;
