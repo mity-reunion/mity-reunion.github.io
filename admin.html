@@ -81,7 +81,7 @@
     .seat.booked   { background: rgba(204,34,0,0.55); border-color: #cc2200; }
     .seat.blocked  { background: rgba(251,146,60,0.55); border-color: #f97316; }
     .seat.wc-seat  { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); }
-    .seat.checked-in { background: rgba(139,92,246,0.6) !important; border-color: rgba(167,139,250,0.7) !important; }
+    .seat.checked-in { background: rgba(74,222,128,0.45) !important; border-color: rgba(74,222,128,0.8) !important; }
     .seat.search-match { outline: 2px solid #facc15; outline-offset: 2px; }
     .seat.selected-info { outline: 2px solid #fff; outline-offset: 2px; }
 
@@ -179,7 +179,7 @@
         <div class="leg"><div class="leg-dot" style="background:rgba(204,34,0,0.55);border:1px solid #cc2200"></div>예매됨</div>
         <div class="leg"><div class="leg-dot" style="background:rgba(251,146,60,0.55);border:1px solid #f97316"></div>예약 좌석</div>
         <div class="leg"><div class="leg-dot" style="background:rgba(56,189,248,0.2);border:1px solid rgba(56,189,248,0.5)"></div>휠체어석</div>
-        <div class="leg"><div class="leg-dot" style="background:rgba(139,92,246,0.6);border:1px solid rgba(167,139,250,0.7)"></div>티켓 수령 완료</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(74,222,128,0.45);border:1px solid rgba(74,222,128,0.8)"></div>티켓 수령 완료</div>
       </div>
     </div>
 
@@ -524,7 +524,7 @@
     }
 
     const labelMap = { booked:'예매됨', cancelled:'취소됨', 'checked-in':'수령 완료', 'checked-out':'수령 취소', blocked:'예약 지정', unblocked:'예약 해제' };
-    const colorMap = { booked:'#cc2200', cancelled:'#ff6b6b', 'checked-in':'#a78bfa', 'checked-out':'#9ca3af', blocked:'#f97316', unblocked:'#9ca3af' };
+    const colorMap = { booked:'#cc2200', cancelled:'#ff6b6b', 'checked-in':'#4ade80', 'checked-out':'#9ca3af', blocked:'#f97316', unblocked:'#9ca3af' };
 
     list.className = 'history-list';
     list.innerHTML = all.map(e => `
