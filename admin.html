@@ -359,7 +359,6 @@
     let html = `<div class="info-seat-id">${seatLabel(id)}</div>`;
 
     if (booking) {
-      const seats64 = encodeURIComponent(JSON.stringify(booking.seats || []));
       html += `
         <div class="info-row"><span class="info-key">이메일</span><span class="info-val">${booking.email || '-'}</span></div>
         <div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(booking.phone)}</span></div>
@@ -371,10 +370,10 @@
           <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${checkinBy})</span>` : ''}</span>
         </label>
         <div class="cancel-section">
-          <p class="cancel-label">예매 취소 (취소하려면 아래에 <strong style="color:#ff6b6b">예매취소</strong> 입력)</p>
+          <p class="cancel-label">이 좌석 취소 (취소하려면 아래에 <strong style="color:#ff6b6b">예매취소</strong> 입력)</p>
           <input class="input-target" id="cancelInput" placeholder="예매취소" oninput="document.getElementById('btnCancelBook').disabled=this.value!=='예매취소'"/>
           <button class="btn-cancel-booking" id="btnCancelBook" disabled
-            onclick="doCancelBooking('${booking.ref}', decodeURIComponent('${seats64}'))">예매 취소</button>
+            onclick="doCancelBooking('${booking.ref}', '${id}')">이 좌석 취소</button>
         </div>`;
     } else if (isBlocked) {
       const target    = blockedInfo[id]?.target || '';
@@ -387,7 +386,11 @@
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${id}', this.checked)"/>
           <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${checkinBy})</span>` : ''}</span>
         </label>
-        <button class="btn-unblock" onclick="doUnblock('${id}')">예약 해제</button>`;
+        <div class="cancel-section">
+          <p class="cancel-label">예약 해제 (해제하려면 아래에 <strong style="color:#f97316">예약해제</strong> 입력)</p>
+          <input class="input-target" id="unblockInput" placeholder="예약해제" oninput="document.getElementById('btnUnblock').disabled=this.value!=='예약해제'"/>
+          <button class="btn-unblock" id="btnUnblock" disabled onclick="doUnblock('${id}')">예약 해제</button>
+        </div>`;
     } else {
       html += `
         <div style="font-size:0.8rem;color:var(--muted);margin:6px 0 10px;">선택 가능한 좌석</div>
@@ -420,21 +423,34 @@
     buildMaps(); updateStats(); selectSeat(id);
   }
 
-  async function doCancelBooking(ref, seatsJson) {
-    const seatIds = JSON.parse(seatsJson);
+  async function doCancelBooking(ref, seatId) {
     const { doc, updateDoc, getDoc, setDoc } = window._fs;
     const db = window._db;
-    await updateDoc(doc(db, 'bookings', ref), { status: 'cancelled' });
-    const snap = await getDoc(doc(db, 'seats', 'reserved'));
-    const existing = snap.exists() ? (snap.data().list || []) : [];
-    await setDoc(doc(db, 'seats', 'reserved'), { list: existing.filter(s => !seatIds.includes(s)) });
-    seatIds.forEach(s => { delete checkins[s]; });
+
+    // 예약된 좌석 목록에서 해당 좌석 제거
+    const resSnap = await getDoc(doc(db, 'seats', 'reserved'));
+    const existing = resSnap.exists() ? (resSnap.data().list || []) : [];
+    await setDoc(doc(db, 'seats', 'reserved'), { list: existing.filter(s => s !== seatId) });
+
+    // 예매 문서에서 해당 좌석만 제거, 좌석이 모두 없어지면 전체 취소
+    const bkSnap = await getDoc(doc(db, 'bookings', ref));
+    if (bkSnap.exists()) {
+      const remaining = (bkSnap.data().seats || []).filter(s => s !== seatId);
+      await updateDoc(doc(db, 'bookings', ref), {
+        seats: remaining,
+        ...(remaining.length === 0 ? { status: 'cancelled' } : {}),
+      });
+    }
+
+    // 체크인 제거
+    delete checkins[seatId];
     await setDoc(doc(db, 'seats', 'checkins'), { ...checkins });
+
     await loadData();
-    seatIds.forEach(s => { delete checkins[s]; }); // loadData 캐시가 구버전 반환 시 보정
+    delete checkins[seatId];
     buildMaps(); updateStats();
     selectedId = null;
-    document.getElementById('infoContent').innerHTML = '<p class="info-empty" style="color:#4ade80">예매가 취소되었습니다.</p>';
+    document.getElementById('infoContent').innerHTML = '<p class="info-empty" style="color:#4ade80">취소되었습니다.</p>';
   }
 
   async function toggleCheckin(id, checked) {
