@@ -218,17 +218,6 @@
     }
   }
 
-  // 최초 1회 브라우저 콘솔에서 실행: setupAdmin('admin', '새비밀번호')
-  window.setupAdmin = async function(id, pw) {
-    const waitDb = () => new Promise(res => {
-      const t = setInterval(() => { if (window._db) { clearInterval(t); res(); } }, 50);
-    });
-    await waitDb();
-    const { doc, setDoc } = window._fs;
-    const pwHash = await hashPw(pw);
-    await setDoc(doc(window._db, 'admin', 'credentials'), { id, pwHash });
-    console.log('✓ 관리자 계정이 Firestore에 저장되었습니다.');
-  };
 
   function doLogout() {
     sessionStorage.removeItem('admin_auth');
