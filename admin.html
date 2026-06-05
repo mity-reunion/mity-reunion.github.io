@@ -369,7 +369,6 @@
       html += `
         <div class="info-row"><span class="info-key">이메일</span><span class="info-val">${booking.email || '-'}</span></div>
         <div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(booking.phone)}</span></div>
-        <div class="info-row"><span class="info-key">예매번호</span><span class="info-val">${booking.ref}</span></div>
         <div class="info-row"><span class="info-key">예매 좌석</span><span class="info-val">${(booking.seats||[]).map(seatLabel).join(', ')}</span></div>
         <div class="info-row"><span class="info-key">예매일시</span><span class="info-val">${fmtDate(booking.createdAt)}</span></div>
         <label class="checkin-row">
@@ -451,7 +450,7 @@
         seats: remaining,
         ...(remaining.length === 0 ? { status: 'cancelled' } : {}),
       });
-      logHistory(seatId, 'cancelled', { ref: bkData.ref, email: bkData.email, phone: bkData.phone });
+      logHistory(seatId, 'cancelled', { email: bkData.email, phone: bkData.phone });
     }
 
     // 체크인 제거
@@ -511,8 +510,8 @@
     const all = [...stored];
     const booking = bookingMap[seatId];
     if (booking?.createdAt) {
-      const already = stored.some(e => e.action === 'booked' && e.ref === booking.ref);
-      if (!already) all.push({ action: 'booked', by: null, at: booking.createdAt, ref: booking.ref, email: booking.email, phone: booking.phone });
+      const already = stored.some(e => e.action === 'booked');
+      if (!already) all.push({ action: 'booked', by: null, at: booking.createdAt, email: booking.email, phone: booking.phone });
     }
     all.sort((a, b) => (a.at < b.at ? 1 : -1));
 
@@ -534,6 +533,7 @@
         <div class="history-meta-lbl">${e.by||'예매자'} · ${fmtDate(e.at)}</div>
         ${e.email ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.3)">${e.email}${e.phone ? ' · ' + fmtPhone(e.phone) : ''}</div>` : ''}
       </div>`).join('');
+
   }
 
   // ── 검색 ──
