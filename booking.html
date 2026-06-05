@@ -355,9 +355,7 @@
           return false;
         }
         Kakao.Auth.setAccessToken(token.access_token);
-        const info = await new Promise((res, rej) =>
-          Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
-        ).catch(err => { throw new Error('사용자 정보 오류: ' + JSON.stringify(err)); });
+        const info = await Kakao.API.request({ url: '/v2/user/me' });
         currentUser = {
           id: String(info.id),
           name: info.kakao_account?.profile?.nickname || info.properties?.nickname || '카카오 사용자',
