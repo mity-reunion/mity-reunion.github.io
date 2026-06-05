@@ -203,9 +203,9 @@
       const { doc, getDoc } = window._fs;
       const snap = await getDoc(doc(window._db, 'admin', 'credentials'));
       if (!snap.exists()) throw new Error('no credentials');
-      const creds  = snap.data();
-      const pwHash = await hashPw(pw);
-      if (id === creds.id && pwHash === creds.pwHash) {
+      const accounts = snap.data().accounts || {};
+      const pwHash   = await hashPw(pw);
+      if (accounts[id] && accounts[id] === pwHash) {
         sessionStorage.setItem('admin_auth', '1');
         showDashboard();
       } else {

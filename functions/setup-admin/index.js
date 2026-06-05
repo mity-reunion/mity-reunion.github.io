@@ -30,7 +30,10 @@ functions.http('setupAdmin', async (req, res) => {
   }
 
   const pwHash = crypto.createHash('sha256').update(pw).digest('hex');
-  await admin.firestore().doc('admin/credentials').set({ id, pwHash });
+  await admin.firestore().doc('admin/credentials').set(
+    { accounts: { [id]: pwHash } },
+    { merge: true }
+  );
 
-  res.json({ success: true, message: '관리자 계정이 저장되었습니다.' });
+  res.json({ success: true, message: `관리자 계정 '${id}'이(가) 저장되었습니다.` });
 });
