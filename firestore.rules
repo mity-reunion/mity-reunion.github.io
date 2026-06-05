@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 예약된 좌석 목록 — 누구나 읽기, 쓰기 가능 (예매/취소)
+    match /seats/{docId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 예매 내역 — 누구나 읽기/쓰기 가능 (로그인은 앱 레벨에서 처리)
+    match /bookings/{bookingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

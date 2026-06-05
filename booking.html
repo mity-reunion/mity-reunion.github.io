@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>M.I.T.Y REUNION — 예매</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
-  <!-- 카카오 SDK -->
-  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiJwsuZuItXz4Cs0ZondQ2rfjcWBpIN3Y",
@@ -23,8 +22,11 @@
 
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
+    const auth = getAuth(app);
     window._db = db;
+    window._auth = auth;
     window._firestoreLib = { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs };
+    window._authLib = { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut };
   </script>
 
   <style>
@@ -65,26 +67,46 @@
     .page { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px 60px; min-height: 100vh; opacity: 0; pointer-events: none; position: absolute; inset: 0; transition: opacity 0.35s ease; }
     .page.active { opacity: 1; pointer-events: auto; position: relative; }
 
-    /* ── 로그인 ── */
-    .login-box { width: min(400px, 90vw); display: flex; flex-direction: column; align-items: center; }
-    .login-title { font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 8px; text-align: center; }
-    .login-sub   { font-size: 0.82rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 48px; text-align: center; }
+    /* ── 인증 폼 공통 ── */
+    .auth-box { width: min(400px, 90vw); display: flex; flex-direction: column; align-items: stretch; }
+    .auth-title { font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 8px; text-align: center; }
+    .auth-sub   { font-size: 0.82rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 36px; text-align: center; }
 
-    .social-btn {
-      width: 100%; display: flex; align-items: center; gap: 14px;
-      padding: 15px 24px; border: none; border-radius: 4px;
-      font-family: 'Noto Sans KR', sans-serif; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; transition: opacity 0.15s, transform 0.15s;
-      margin-bottom: 12px; letter-spacing: 0.03em;
+    .input-field {
+      width: 100%; padding: 14px 16px; margin-bottom: 12px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--white);
+      font-family: 'Noto Sans KR', sans-serif; font-size: 0.95rem;
+      outline: none; transition: border-color 0.2s;
     }
-    .social-btn:hover  { opacity: 0.88; transform: translateY(-1px); }
-    .social-btn:active { transform: translateY(0); }
-    .btn-naver  { background: #03C75A; color: #fff; }
-    .btn-kakao  { background: #FEE500; color: #191919; }
-    .btn-icon   { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-    .btn-text   { flex: 1; text-align: center; }
+    .input-field:focus { border-color: rgba(255,255,255,0.6); }
+    .input-field::placeholder { color: rgba(255,255,255,0.35); }
 
-    .login-notice { margin-top: 28px; font-size: 0.72rem; color: var(--muted); text-align: center; line-height: 1.9; }
+    .btn-primary {
+      width: 100%; padding: 14px; border: none; border-radius: 4px;
+      background: var(--white); color: var(--black);
+      font-family: 'Noto Sans KR', sans-serif; font-size: 0.95rem; font-weight: 900;
+      cursor: pointer; letter-spacing: 0.06em;
+      box-shadow: 3px 3px 0 var(--red); transition: transform 0.12s, box-shadow 0.12s, opacity 0.15s;
+    }
+    .btn-primary:hover    { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--red); }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: 3px 3px 0 var(--red); }
+
+    .privacy-notice {
+      margin-top: 24px; font-size: 0.7rem; color: var(--muted);
+      text-align: center; line-height: 2; padding: 16px 18px;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;
+    }
+    .privacy-notice strong { color: rgba(255,255,255,0.85); }
+
+    /* 이메일 발송 완료 */
+    .sent-box  { width: min(400px, 90vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+    .sent-icon { font-size: 2.8rem; }
+    .sent-title { font-size: 1.3rem; font-weight: 900; }
+    .sent-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.9; }
+    .sent-email { color: var(--white); font-weight: 700; }
+    .btn-text-link { margin-top: 8px; background: none; border: 1px solid var(--border); color: var(--muted); padding: 9px 22px; border-radius: 4px; font-family: inherit; font-size: 0.8rem; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+    .btn-text-link:hover { color: var(--white); border-color: rgba(255,255,255,0.4); }
 
     /* ── 좌석 ── */
     .dot-bg { background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 8px 8px; }
@@ -216,34 +238,48 @@
     </div>
   </div>
 
-  <!-- 로그인 -->
-  <div class="page" id="pageLogin">
-    <div class="login-box fade-up">
-      <h1 class="login-title">예매하기</h1>
-      <p class="login-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+  <!-- 이메일 입력 -->
+  <div class="page" id="pageEmail">
+    <div class="auth-box fade-up">
+      <h1 class="auth-title">예매하기</h1>
+      <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+      <input type="email" id="emailInput" class="input-field" placeholder="이메일 주소 입력"
+        onkeydown="if(event.key==='Enter') sendEmailLink()" />
+      <button class="btn-primary" onclick="sendEmailLink()">인증 메일 보내기</button>
+      <div class="privacy-notice">
+        입력하신 이메일과 다음 단계의 전화번호는 예매 확인 및<br>
+        공연 당일 입장 확인 목적으로만 사용됩니다.<br>
+        <strong>공연 종료 후 모든 개인정보는 즉시 폐기됩니다.</strong>
+      </div>
+    </div>
+  </div>
 
-      <button class="social-btn btn-naver" onclick="loginNaver()">
-        <span class="btn-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M13.6 12.4L10.2 7H7v10h3.4l3.4-5.4L17 17h3.2V7H17z" fill="white"/>
-          </svg>
-        </span>
-        <span class="btn-text">네이버로 계속하기</span>
-      </button>
-
-      <button class="social-btn btn-kakao" onclick="loginKakao()">
-        <span class="btn-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 3C7.03 3 3 6.36 3 10.5c0 2.65 1.72 4.97 4.32 6.35l-.9 3.35 3.9-2.57c.53.07 1.08.11 1.68.11 4.97 0 9-3.36 9-7.5S16.97 3 12 3z" fill="#191919"/>
-          </svg>
-        </span>
-        <span class="btn-text">카카오로 계속하기</span>
-      </button>
-
-      <p class="login-notice">
-        로그인 시 예매 내역 조회 및 취소가 가능합니다.<br>
-        개인정보는 예매 목적으로만 사용됩니다.
+  <!-- 이메일 발송 완료 -->
+  <div class="page" id="pageEmailSent">
+    <div class="sent-box fade-up">
+      <div class="sent-icon">✉️</div>
+      <p class="sent-title">메일함을 확인해주세요</p>
+      <p class="sent-desc">
+        <span id="sentEmailAddr" class="sent-email"></span>으로<br>
+        인증 링크를 발송했습니다.<br>
+        링크를 클릭하면 예매가 진행됩니다.
       </p>
+      <button class="btn-text-link" onclick="showPage('email')">이메일 다시 입력하기</button>
+    </div>
+  </div>
+
+  <!-- 전화번호 입력 -->
+  <div class="page" id="pagePhone">
+    <div class="auth-box fade-up">
+      <h1 class="auth-title">전화번호 입력</h1>
+      <p class="auth-sub">공연 당일 입장 확인에 사용됩니다</p>
+      <input type="tel" id="phoneInput" class="input-field" placeholder="010-0000-0000"
+        onkeydown="if(event.key==='Enter') submitPhone()" />
+      <button class="btn-primary" onclick="submitPhone()">다음</button>
+      <div class="privacy-notice">
+        전화번호는 공연 당일 예매 확인 용도로만 사용되며,<br>
+        <strong>공연 종료 후 즉시 폐기됩니다.</strong>
+      </div>
     </div>
   </div>
 
@@ -297,168 +333,109 @@
 
   <script>
     // ── 상수 ──
-    const MAX_SEATS    = 2;
-    const KAKAO_KEY    = '38d42dffa61867ec85f0879ccd9906c0';
-    const NAVER_CLIENT   = '22ahyWvRWcJQhbylo0QI';
-    const REDIRECT_URI   = 'https://mity-reunion.github.io/booking.html';
-    const NAVER_PROXY_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/naverProxy';
-
-    function loginNaver() {
-      const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
-      sessionStorage.setItem('naver_state', state);
-      const params = new URLSearchParams({
-        response_type: 'token',
-        client_id: NAVER_CLIENT,
-        redirect_uri: REDIRECT_URI,
-        state,
-        scope: 'name mobile',
-      });
-      location.href = 'https://nid.naver.com/oauth2.0/authorize?' + params.toString();
-    }
+    const MAX_SEATS = 2;
+    const SITE_URL  = 'https://mity-reunion.github.io/booking.html';
 
     // ── 상태 ──
-    let currentUser = null;   // { id, name, provider }
+    let currentUser = null;   // { id, email, phone }
     let reserved    = new Set();
     const selected  = new Set();
 
-    // ── 카카오 초기화 ──
-    Kakao.init(KAKAO_KEY);
-
-    // ── 페이지 진입 시 로그인 상태 복원 (로딩 페이지가 기본 표시됨) ──
-    window.addEventListener('load', async () => {
-      // 카카오 콜백 처리
-      const _code = new URLSearchParams(location.search).get('code');
-      if (_code) {
-        await handleKakaoCallback(_code);
-        return;
-      }
-
-      // 네이버 access_token 콜백 처리 (hash 방식)
-      const _naverToken = new URLSearchParams(location.hash.slice(1)).get('access_token');
-      if (_naverToken) {
-        await handleNaverToken(_naverToken);
-        return;
-      }
-
-      // 세션 복원 (카카오)
-      const savedKakao = sessionStorage.getItem('kakao_user');
-      if (savedKakao) {
-        currentUser = JSON.parse(savedKakao);
-        afterLogin();
-        return;
-      }
-
-      // 세션 복원 (네이버)
-      const savedNaver = sessionStorage.getItem('naver_user');
-      if (savedNaver) {
-        currentUser = JSON.parse(savedNaver);
-        afterLogin();
-        return;
-      }
-
-      // 미로그인 → 로그인 페이지
-      showPage('login');
+    // ── 페이지 진입 ──
+    window.addEventListener('load', () => {
+      // Firebase Auth 모듈 로드 대기
+      const waitAuth = setInterval(() => {
+        if (!window._auth || !window._authLib) return;
+        clearInterval(waitAuth);
+        initAuth();
+      }, 50);
     });
 
-    // ── 카카오 로그인 (auth code redirect 방식) ──
-    function loginKakao() {
-      Kakao.Auth.authorize({ redirectUri: REDIRECT_URI, scope: 'phone_number' });
+    function initAuth() {
+      const { isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } = window._authLib;
+      const auth = window._auth;
+
+      // 이메일 링크 콜백 처리
+      if (isSignInWithEmailLink(auth, location.href)) {
+        let email = sessionStorage.getItem('emailForSignIn');
+        if (!email) email = prompt('인증하신 이메일 주소를 입력해주세요:');
+        if (!email) { showPage('email'); return; }
+        signInWithEmailLink(auth, email, location.href)
+          .then(result => {
+            sessionStorage.removeItem('emailForSignIn');
+            history.replaceState({}, '', location.pathname);
+            currentUser = { id: result.user.uid, email: result.user.email, phone: '' };
+            showPage('phone');
+          })
+          .catch(e => {
+            console.error('이메일 인증 오류', e);
+            showToast('인증에 실패했습니다. 다시 시도해주세요.');
+            history.replaceState({}, '', location.pathname);
+            showPage('email');
+          });
+        return;
+      }
+
+      // Auth 상태 감지
+      onAuthStateChanged(auth, async user => {
+        if (user) {
+          const saved = sessionStorage.getItem('booking_user');
+          if (saved) {
+            currentUser = JSON.parse(saved);
+            await afterLogin();
+          } else {
+            currentUser = { id: user.uid, email: user.email, phone: '' };
+            showPage('phone');
+          }
+        } else {
+          showPage('email');
+        }
+      });
     }
 
-    async function handleKakaoCallback(code) {
-      try {
-        const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            client_id: KAKAO_KEY,
-            redirect_uri: REDIRECT_URI,
-            code,
-          }),
-        });
-        const token = await tokenRes.json();
-        if (!token.access_token) {
-          console.error('카카오 토큰 오류', token);
-          showToast('카카오 로그인에 실패했습니다.');
-          history.replaceState({}, '', location.pathname);
-          showPage('login');
-          return false;
-        }
-        Kakao.Auth.setAccessToken(token.access_token);
-        const info = await Kakao.API.request({ url: '/v2/user/me' });
-        currentUser = {
-          id: String(info.id),
-          name: info.kakao_account?.profile?.nickname || info.properties?.nickname || '카카오 사용자',
-          provider: 'kakao',
-          phone: normalizePhone(info.kakao_account?.phone_number || ''),
-        };
-        sessionStorage.setItem('kakao_user', JSON.stringify(currentUser));
-        history.replaceState({}, '', location.pathname);
-        await afterLogin();
-        return true;
-      } catch (e) {
-        const msg = e?.message || JSON.stringify(e);
-        console.error('카카오 콜백 오류:', msg);
-        showToast('오류: ' + msg.slice(0, 60));
-        history.replaceState({}, '', location.pathname);
-        showPage('login');
-        return false;
+    // ── 이메일 인증 메일 전송 ──
+    async function sendEmailLink() {
+      const email = document.getElementById('emailInput').value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('올바른 이메일 주소를 입력해주세요.'); return;
       }
-    }
-
-
-
-    // 네이버 콜백 처리 — Cloud Function 프록시를 통해 사용자 정보 조회
-    async function handleNaverToken(token) {
-      if (!token) return false;
-      if (NAVER_PROXY_URL === 'YOUR_CLOUD_FUNCTION_URL') {
-        showPage('login');
-        showToast('네이버 로그인 서버가 아직 설정되지 않았습니다.');
-        history.replaceState({}, '', location.pathname);
-        return false;
-      }
+      const btn = document.querySelector('#pageEmail .btn-primary');
+      btn.disabled = true; btn.textContent = '전송 중...';
       try {
-        const res = await fetch(NAVER_PROXY_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
+        await window._authLib.sendSignInLinkToEmail(window._auth, email, {
+          url: SITE_URL, handleCodeInApp: true,
         });
-        if (!res.ok) throw new Error('프록시 응답 오류: ' + res.status);
-        const data = await res.json();
-        if (data.resultcode === '00') {
-          const name = data.response?.name || '네이버 사용자';
-          const id   = data.response?.id   || ('naver_' + Date.now());
-          currentUser = { id: 'naver_' + id, name, provider: 'naver', phone: normalizePhone(data.response?.mobile || '') };
-          sessionStorage.setItem('naver_user', JSON.stringify(currentUser));
-          history.replaceState({}, '', location.pathname);
-          await afterLogin();
-          return true;
-        }
-        console.error('네이버 사용자 정보 오류', data);
-        showToast('네이버 사용자 정보를 가져올 수 없습니다.');
+        sessionStorage.setItem('emailForSignIn', email);
+        document.getElementById('sentEmailAddr').textContent = email;
+        showPage('emailSent');
       } catch(e) {
-        console.error('네이버 프록시 오류', e);
-        showToast('네이버 로그인 중 오류가 발생했습니다.');
+        console.error('이메일 전송 오류', e);
+        showToast('전송 실패: ' + (e.code || e.message));
+      } finally {
+        btn.disabled = false; btn.textContent = '인증 메일 보내기';
       }
-      history.replaceState({}, '', location.pathname);
-      showPage('login');
-      return false;
+    }
+
+    // ── 전화번호 제출 ──
+    async function submitPhone() {
+      const raw = document.getElementById('phoneInput').value.trim();
+      const phone = normalizePhone(raw);
+      if (phone.length < 10) { showToast('올바른 전화번호를 입력해주세요.'); return; }
+      currentUser.phone = phone;
+      sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
+      await afterLogin();
     }
 
     // ── 로그인 후 처리 ──
     async function afterLogin() {
-      document.getElementById('navUser').textContent = currentUser.name;
+      document.getElementById('navUser').textContent = currentUser.email;
       document.getElementById('btnLogout').style.display = '';
       await loadReserved();
 
       // 전화번호로 중복 예매 확인
       if (currentUser.phone) {
         const existing = await findBookingByPhone(currentUser.phone);
-        if (existing) {
-          showExistingBooking(existing);
-          return;
-        }
+        if (existing) { showExistingBooking(existing); return; }
       }
 
       showPage('seat');
@@ -501,14 +478,14 @@
 
     // ── 로그아웃 ──
     function logout() {
-      sessionStorage.removeItem('kakao_user');
-      sessionStorage.removeItem('naver_user');
-      if (Kakao.Auth.getAccessToken()) Kakao.Auth.logout();
+      sessionStorage.removeItem('booking_user');
+      sessionStorage.removeItem('emailForSignIn');
+      if (window._auth && window._authLib) window._authLib.signOut(window._auth).catch(() => {});
       currentUser = null;
       selected.clear();
       document.getElementById('navUser').textContent = '';
       document.getElementById('btnLogout').style.display = 'none';
-      showPage('login');
+      showPage('email');
     }
 
     // ── Firestore: 예약된 좌석 로드 ──
@@ -534,8 +511,8 @@
       await setDoc(doc(db, 'bookings', refNum), {
         ref: refNum,
         userId: currentUser.id,
-        userName: currentUser.name,
-        provider: currentUser.provider,
+        userName: currentUser.email,
+        email: currentUser.email,
         phone: currentUser.phone || '',
         seats: [...seats],
         amount: 0,
@@ -673,7 +650,7 @@
 
     // ── 유틸 ──
     function showPage(name) {
-      const map = { loading:'pageLoading', login:'pageLogin', seat:'pageSeat', done:'pageDone' };
+      const map = { loading:'pageLoading', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone' };
       const next = document.getElementById(map[name]);
       const current = document.querySelector('.page.active');
       if (current && current !== next) {
@@ -686,7 +663,7 @@
         next.classList.add('active');
       }
       document.getElementById('navStep').textContent =
-        name === 'seat' ? '좌석 선택' : name === 'done' ? '예매 완료' : name === 'loading' ? '' : '로그인';
+        name === 'seat' ? '좌석 선택' : name === 'done' ? '예매 완료' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : '이메일 인증';
     }
 
     let toastTimer;
