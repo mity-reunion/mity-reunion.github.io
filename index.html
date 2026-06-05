@@ -429,10 +429,7 @@
     const grid = document.getElementById('castRoot').querySelector('.c-grid');
     if (!grid) return;
     const cards = grid.querySelectorAll('.c-card');
-    if (cards[idx]) {
-      document.getElementById('cast').scrollIntoView({behavior:'smooth', block:'start'});
-      setTimeout(() => cards[idx].click(), 400);
-    }
+    if (cards[idx]) cards[idx].click();
   };
   (function() {
     const members = [

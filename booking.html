@@ -187,7 +187,10 @@
     .btn-book:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
     /* ── 완료 ── */
-    .done-box   { width: min(440px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; padding-top: 8px; }
+    #pageDone, #pageSeat { padding-top: 52px; }
+    .done-box   { width: min(440px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+    .done-actions { display: flex; gap: 10px; width: 100%; margin-top: 4px; }
+    .done-actions > button { flex: 1; margin-top: 0; }
     .done-title { font-size: 1.3rem; font-weight: 900; letter-spacing: 0.15em; color: var(--white); margin-bottom: 4px; }
     .done-info  { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; }
     .done-row   { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
@@ -243,7 +246,9 @@
     .book-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .book-hamburger.open span:nth-child(2) { opacity: 0; }
     .book-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .book-side-menu { display: none; position: fixed; inset: 0; background: rgba(5,5,5,0.92); z-index: 101; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding-top: 80px; }
+    .book-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 100; }
+    .book-backdrop.open { display: block; }
+    .book-side-menu { display: none; position: fixed; top: 0; right: 0; bottom: 0; width: min(200px, 40vw); background: rgba(5,5,5,0.95); z-index: 101; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding-top: 72px; }
     .book-side-menu.open { display: flex; }
     .book-menu-user { font-size: 0.75rem; color: rgba(255,255,255,0.45); padding: 20px 40px; border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); width: 100%; word-break: break-all; }
     .book-menu-logout { display: block; padding: 20px 40px; width: 100%; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--white); font-family: inherit; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.2em; cursor: pointer; text-align: left; transition: opacity 0.2s; }
@@ -271,6 +276,7 @@
   <button class="book-hamburger" id="bookHamburger" onclick="toggleBookMenu()" aria-label="메뉴">
     <span></span><span></span><span></span>
   </button>
+  <div class="book-backdrop" id="bookBackdrop" onclick="closeBookMenu()"></div>
   <div class="book-side-menu" id="bookSideMenu">
     <span class="book-menu-user" id="navUserMobile"></span>
     <button class="book-menu-logout" id="btnLogoutMobile" style="display:none" onclick="logout(); closeBookMenu()">로그아웃</button>
@@ -336,7 +342,6 @@
         <h2 id="seatPageTitle">좌석 선택</h2>
         <p id="seatPageSub">원하는 좌석을 선택해 주세요 · 최대 2석 · 무료</p>
         <button class="btn-back-done" id="btnBackDone" onclick="backFromSeatView()">← 돌아가기</button>
-        <button class="btn-seat-view" id="btnSeatChange" style="display:none" onclick="enterChangeMode()">좌석 변경하기</button>
       </div>
 
       <div class="seat-scroll-wrap fade-up">
@@ -377,9 +382,10 @@
           <span class="done-val" id="doneSeats">—</span>
         </div>
       </div>
-      <button class="btn-home" onclick="location.href='index.html'">메인으로 돌아가기</button>
-      <button class="btn-seat-view" onclick="showSeatView()">좌석현황 보기 / 좌석 변경</button>
-      <button class="btn-cancel-red" id="btnCancelBooking" style="display:none" onclick="openCancelModal()">예매 취소하기</button>
+      <div class="done-actions">
+        <button class="btn-seat-view" onclick="showSeatView()">좌석 변경</button>
+        <button class="btn-cancel-red" id="btnCancelBooking" style="display:none" onclick="openCancelModal()">취소하기</button>
+      </div>
     </div>
   </div>
 
@@ -669,19 +675,23 @@
 
     // ── 좌석현황 보기 (뷰 전용) ──
     async function showSeatView() {
-      viewOnly = true;
+      changeMode = true; viewOnly = false;
       await loadReserved();
-      document.getElementById('seatPageTitle').textContent = '좌석 현황';
-      document.getElementById('seatPageSub').textContent = '현재 예매 현황입니다';
-      document.getElementById('btnBackDone').style.display = '';
-      document.getElementById('btnSeatChange').style.display = currentBookingRef ? '' : 'none';
-      document.querySelector('.seat-summary').style.display = 'none';
+      currentBookingSeats.forEach(s => { reserved.delete(s); selected.add(s); });
+      document.getElementById('seatPageTitle').textContent = '좌석 변경';
+      document.getElementById('seatPageSub').textContent = '변경할 좌석을 선택해 주세요 (최대 2석)';
+      document.getElementById('btnBackDone').style.display = 'none';
+      document.getElementById('btnBook').style.display = 'none';
+      document.getElementById('btnChangeConfirm').style.display = '';
+      document.getElementById('btnCancelChange').style.display = '';
+      document.querySelector('.seat-summary').style.display = '';
       if (seatsBuilt) {
         refreshSeatUI();
       } else {
         seatsBuilt = true;
         buildB2F(); buildB1F();
       }
+      updateSidebar();
       showPage('seat');
     }
 
@@ -690,7 +700,6 @@
       document.getElementById('seatPageTitle').textContent = '좌석 선택';
       document.getElementById('seatPageSub').textContent = '원하는 좌석을 선택해 주세요 · 최대 2석 · 무료';
       document.getElementById('btnBackDone').style.display = 'none';
-      document.getElementById('btnSeatChange').style.display = 'none';
       document.getElementById('btnChangeConfirm').style.display = 'none';
       document.getElementById('btnCancelChange').style.display = 'none';
       document.getElementById('btnBook').style.display = '';
@@ -970,10 +979,12 @@
   <script>
     function toggleBookMenu() {
       document.getElementById('bookSideMenu').classList.toggle('open');
+      document.getElementById('bookBackdrop').classList.toggle('open');
       document.getElementById('bookHamburger').classList.toggle('open');
     }
     function closeBookMenu() {
       document.getElementById('bookSideMenu').classList.remove('open');
+      document.getElementById('bookBackdrop').classList.remove('open');
       document.getElementById('bookHamburger').classList.remove('open');
     }
   </script>
