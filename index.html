@@ -294,11 +294,17 @@
   <section id="cast">
     <p class="section-label fade-in">Cast</p>
     <h2 class="section-title fade-in">공연진 소개</h2>
+    <p class="cast-hint fade-in">카드를 눌러 공연 이력을 확인해보세요</p>
 
     <div id="castRoot"></div>
   </section>
 
   <style>
+    .cast-hint {
+      font-size: 0.75rem; letter-spacing: 0.15em; color: rgba(255,255,255,0.3);
+      margin-bottom: 36px; margin-top: -36px;
+    }
+    .cast-hint::before { content: '↗ '; }
     .c-card {
       background: rgba(255,255,255,0.04);
       border: 0.5px solid rgba(255,255,255,0.1);
@@ -306,9 +312,18 @@
       overflow: hidden;
       cursor: pointer;
       transition: border-color 0.2s, transform 0.15s;
+      position: relative;
     }
     .c-card:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-2px); }
     .c-card.active { border-color: rgba(255,255,255,0.6); }
+    .c-card::after {
+      content: '+';
+      position: absolute; bottom: 8px; right: 10px;
+      font-size: 14px; color: rgba(255,255,255,0.2);
+      transition: color 0.2s;
+      line-height: 1;
+    }
+    .c-card:hover::after { color: rgba(255,255,255,0.6); }
     .c-photo {
       width: 100%; aspect-ratio: 1;
       display: flex; align-items: center; justify-content: center;
