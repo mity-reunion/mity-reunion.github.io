@@ -358,9 +358,12 @@
       // 이메일 링크 콜백 처리
       if (isSignInWithEmailLink(auth, location.href)) {
         const pendingUrl = location.href;
-        const email = sessionStorage.getItem('emailForSignIn') || localStorage.getItem('emailForSignIn');
+        // URL 파라미터 → storage → fallback 순으로 이메일 취득
+        const emailFromUrl = new URLSearchParams(location.search).get('email');
+        const email = emailFromUrl
+          || sessionStorage.getItem('emailForSignIn')
+          || localStorage.getItem('emailForSignIn');
         if (email) {
-          // 같은 기기 — 바로 인증
           signInWithEmailLink(auth, email, pendingUrl)
             .then(result => {
               sessionStorage.removeItem('emailForSignIn');
@@ -376,7 +379,7 @@
               showPage('email');
             });
         } else {
-          // 다른 기기에서 링크를 열었을 때 — 이메일 재입력 안내
+          // 이메일을 전혀 찾을 수 없는 경우 (매우 드문 케이스)
           localStorage.setItem('pendingSignInUrl', pendingUrl);
           history.replaceState({}, '', location.pathname);
           showPage('email');
@@ -385,11 +388,8 @@
         return;
       }
 
-      // 다른 기기 인증 대기 중인 URL 처리
       const pendingUrl = localStorage.getItem('pendingSignInUrl');
-      if (pendingUrl) {
-        window._pendingSignInUrl = pendingUrl;
-      }
+      if (pendingUrl) window._pendingSignInUrl = pendingUrl;
 
       // Auth 상태 감지
       onAuthStateChanged(auth, async user => {
@@ -446,7 +446,8 @@
       btn.textContent = '전송 중...';
       try {
         await window._authLib.sendSignInLinkToEmail(window._auth, email, {
-          url: SITE_URL, handleCodeInApp: true,
+          url: `${SITE_URL}?email=${encodeURIComponent(email)}`,
+          handleCodeInApp: true,
         });
         sessionStorage.setItem('emailForSignIn', email);
         localStorage.setItem('emailForSignIn', email);
