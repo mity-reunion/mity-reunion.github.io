@@ -199,6 +199,9 @@
     .btn-seat-view:hover { color: #fff; border-color: rgba(255,255,255,0.5); }
     .btn-back-done { display: none; padding: 8px 20px; background: none; color: var(--muted); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.8rem; cursor: pointer; }
     .btn-back-done:hover { color: #fff; }
+    .btn-change-confirm { width: 100%; padding: 13px; background: var(--white); color: var(--black); border: none; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.88rem; font-weight: 900; letter-spacing: 0.1em; cursor: pointer; box-shadow: 3px 3px 0 #2563eb; transition: transform 0.12s, box-shadow 0.12s; }
+    .btn-change-confirm:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #2563eb; }
+    .btn-change-confirm:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
     /* 확인 모달 */
     .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; }
@@ -307,6 +310,7 @@
         <h2 id="seatPageTitle">좌석 선택</h2>
         <p id="seatPageSub">원하는 좌석을 선택해 주세요 · 최대 2석 · 무료</p>
         <button class="btn-back-done" id="btnBackDone" onclick="backFromSeatView()">← 돌아가기</button>
+        <button class="btn-seat-view" id="btnSeatChange" style="display:none" onclick="enterChangeMode()">좌석 변경하기</button>
       </div>
 
       <div class="seat-scroll-wrap fade-up">
@@ -331,6 +335,8 @@
           <p class="sidebar-empty">선택된 좌석이 없습니다</p>
         </div>
         <button class="btn-book" id="btnBook" disabled onclick="confirmBooking()">예매 확정</button>
+        <button class="btn-change-confirm" id="btnChangeConfirm" style="display:none" disabled onclick="confirmChange()">변경 확정</button>
+        <button class="btn-cancel" id="btnCancelChange" style="display:none" onclick="cancelChange()">변경 취소</button>
       </div>
     </div>
   </div>
@@ -641,6 +647,7 @@
       document.getElementById('seatPageTitle').textContent = '좌석 현황';
       document.getElementById('seatPageSub').textContent = '현재 예매 현황입니다';
       document.getElementById('btnBackDone').style.display = '';
+      document.getElementById('btnSeatChange').style.display = currentBookingRef ? '' : 'none';
       document.querySelector('.seat-summary').style.display = 'none';
       if (seatsBuilt) {
         refreshSeatUI();
@@ -651,12 +658,73 @@
       showPage('seat');
     }
 
-    function backFromSeatView() {
-      viewOnly = false;
+    function resetSeatPageUI() {
+      viewOnly = false; changeMode = false;
       document.getElementById('seatPageTitle').textContent = '좌석 선택';
       document.getElementById('seatPageSub').textContent = '원하는 좌석을 선택해 주세요 · 최대 2석 · 무료';
       document.getElementById('btnBackDone').style.display = 'none';
+      document.getElementById('btnSeatChange').style.display = 'none';
+      document.getElementById('btnChangeConfirm').style.display = 'none';
+      document.getElementById('btnCancelChange').style.display = 'none';
+      document.getElementById('btnBook').style.display = '';
       document.querySelector('.seat-summary').style.display = '';
+    }
+
+    function backFromSeatView() {
+      resetSeatPageUI();
+      showPage('done');
+    }
+
+    function enterChangeMode() {
+      changeMode = true; viewOnly = false;
+      currentBookingSeats.forEach(s => { reserved.delete(s); selected.add(s); });
+      document.getElementById('seatPageTitle').textContent = '좌석 변경';
+      document.getElementById('seatPageSub').textContent = '변경할 좌석을 선택해 주세요 (최대 2석)';
+      document.getElementById('btnBackDone').style.display = 'none';
+      document.getElementById('btnSeatChange').style.display = 'none';
+      document.getElementById('btnBook').style.display = 'none';
+      document.getElementById('btnChangeConfirm').style.display = '';
+      document.getElementById('btnCancelChange').style.display = '';
+      document.querySelector('.seat-summary').style.display = '';
+      refreshSeatUI();
+      updateSidebar();
+    }
+
+    async function confirmChange() {
+      if (selected.size === 0) { showToast('좌석을 선택해 주세요.'); return; }
+      const btn = document.getElementById('btnChangeConfirm');
+      btn.disabled = true; btn.textContent = '처리 중...';
+      try {
+        const newSeats = [...selected];
+        const oldSeats = [...currentBookingSeats];
+        const { doc, updateDoc, getDoc, setDoc } = window._firestoreLib;
+        const db = window._db;
+        await updateDoc(doc(db, 'bookings', currentBookingRef), {
+          seats: newSeats,
+          updatedAt: new Date().toISOString(),
+        });
+        const resSnap = await getDoc(doc(db, 'seats', 'reserved'));
+        const existing = resSnap.exists() ? (resSnap.data().list || []) : [];
+        await setDoc(doc(db, 'seats', 'reserved'), {
+          list: [...new Set([...existing.filter(s => !oldSeats.includes(s)), ...newSeats])],
+        });
+        currentBookingSeats = newSeats;
+        document.getElementById('doneSeats').textContent =
+          newSeats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+        selected.clear();
+        resetSeatPageUI();
+        showPage('done');
+        showToast('좌석이 변경되었습니다.');
+      } catch(e) {
+        console.error('좌석 변경 실패', e);
+        showToast('변경 중 오류가 발생했습니다.');
+        btn.disabled = false; btn.textContent = '변경 확정';
+      }
+    }
+
+    function cancelChange() {
+      selected.clear();
+      resetSeatPageUI();
       showPage('done');
     }
 
@@ -724,7 +792,8 @@
 
     // ── 좌석 빌드 ──
     let seatsBuilt = false;
-    let viewOnly = false;
+    let viewOnly   = false;
+    let changeMode = false;
     function buildSeats() {
       if (seatsBuilt) { refreshSeatUI(); return; }
       seatsBuilt = true;
@@ -776,7 +845,7 @@
 
     function addSeat(rowEl, id, label, isWC=false, displayText='') {
       const btn = document.createElement('button');
-      btn.className = 'seat' + (isWC ? ' wc-seat' : '') + (reserved.has(id) ? ' reserved' : '');
+      btn.className = 'seat' + (isWC ? ' wc-seat' : '') + (reserved.has(id) ? ' reserved' : '') + (selected.has(id) ? ' selected' : '');
       btn.dataset.id = id; btn.title = label;
       if (displayText) btn.textContent = displayText;
       if (!reserved.has(id) && !viewOnly) btn.onclick = () => toggleSeat(id, btn);
@@ -812,6 +881,7 @@
         }).join('');
       }
       document.getElementById('btnBook').disabled = selected.size === 0;
+      document.getElementById('btnChangeConfirm').disabled = selected.size === 0;
     }
 
     function removeSeat(id) {
