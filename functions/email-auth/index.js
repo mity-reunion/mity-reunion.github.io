@@ -30,13 +30,13 @@ function emailHtml(link) {
       <span style="color:#fff;font-weight:900;font-size:1.1rem;">M.I.T.Y</span>
     </td></tr>
     <tr><td style="padding:40px;color:#fff;">
-      <p style="font-size:1.2rem;font-weight:700;margin:0 0 8px;">예매 인증</p>
+      <p style="font-size:1.2rem;font-weight:700;margin:0 0 8px;">로그인</p>
       <p style="font-size:0.85rem;color:rgba(255,255,255,0.55);margin:0 0 32px;">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
       <p style="font-size:0.9rem;color:rgba(255,255,255,0.75);line-height:1.8;margin:0 0 32px;">
         아래 버튼을 클릭하면 예매 페이지로 이동합니다.<br>
         링크는 1시간 동안 유효합니다.
       </p>
-      <a href="${link}" style="display:inline-block;padding:14px 32px;background:#fff;color:#000;font-weight:900;font-size:0.95rem;letter-spacing:0.1em;text-decoration:none;border-radius:4px;box-shadow:3px 3px 0 #cc2200;">예매하러 가기</a>
+      <a href="${link}" style="display:inline-block;padding:14px 32px;background:#fff;color:#000;font-weight:900;font-size:0.95rem;letter-spacing:0.1em;text-decoration:none;border-radius:4px;box-shadow:3px 3px 0 #cc2200;">인증하기</a>
       <p style="margin:32px 0 0;font-size:0.72rem;color:rgba(255,255,255,0.3);line-height:1.8;">
         본인이 요청하지 않은 경우 이 메일을 무시하세요.<br>
         수집된 개인정보는 공연 종료 후 즉시 폐기됩니다.

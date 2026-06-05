@@ -41,12 +41,14 @@
     .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
     .nav-hamburger.open span:nth-child(2) { opacity: 0; }
     .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    .mobile-menu { display: none; position: fixed; inset: 0; background: rgba(5,5,5,0.92); z-index: 101; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding-top: 80px; }
+    .mobile-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 100; }
+    .mobile-backdrop.open { display: block; }
+    .mobile-menu { display: none; position: fixed; top: 0; right: 0; bottom: 0; width: min(200px, 40vw); background: rgba(5,5,5,0.95); z-index: 101; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding-top: 72px; }
     .mobile-menu.open { display: flex; }
     .mobile-menu ul { list-style: none; width: 100%; display: flex; flex-direction: column; }
     .mobile-menu li { border-bottom: 1px solid rgba(255,255,255,0.08); }
     .mobile-menu li:first-child { border-top: 1px solid rgba(255,255,255,0.08); }
-    .mobile-menu a { display: block; padding: 20px 40px; color: var(--white); text-decoration: none; font-family: 'Noto Sans KR', sans-serif; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.2em; transition: opacity 0.2s; }
+    .mobile-menu a { display: block; padding: 18px 16px; color: var(--white); text-decoration: none; font-family: 'Noto Sans KR', sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; transition: opacity 0.2s; }
     .mobile-menu a:hover { opacity: 0.45; }
 
     #hero {
@@ -222,6 +224,7 @@
   <button class="nav-hamburger" id="navHamburger" onclick="toggleMenu()" aria-label="메뉴">
     <span></span><span></span><span></span>
   </button>
+  <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMenu()"></div>
   <div class="mobile-menu" id="mobileMenu">
     <ul>
       <li><a href="#about" onclick="closeMenu()">공연소개</a></li>
@@ -630,10 +633,12 @@
       document.getElementById('menuBooking').style.display =
         sessionStorage.getItem('booking_user') ? '' : 'none';
       document.getElementById('mobileMenu').classList.toggle('open');
+      document.getElementById('mobileBackdrop').classList.toggle('open');
       document.getElementById('navHamburger').classList.toggle('open');
     }
     function closeMenu() {
       document.getElementById('mobileMenu').classList.remove('open');
+      document.getElementById('mobileBackdrop').classList.remove('open');
       document.getElementById('navHamburger').classList.remove('open');
     }
   </script>
