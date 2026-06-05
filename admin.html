@@ -106,6 +106,11 @@
     .checkin-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
     .checkin-row input[type=checkbox] { width: 17px; height: 17px; accent-color: #4ade80; cursor: pointer; flex-shrink: 0; }
     .checkin-row span { font-size: 0.85rem; }
+    .cancel-section { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; }
+    .cancel-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.1em; }
+    .btn-cancel-booking { width: 100%; padding: 11px; background: rgba(204,34,0,0.15); color: #ff6b6b; border: 1px solid rgba(204,34,0,0.5); border-radius: 4px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+    .btn-cancel-booking:not(:disabled):hover { background: rgba(204,34,0,0.3); }
+    .btn-cancel-booking:disabled { opacity: 0.35; cursor: not-allowed; }
 
     @media (max-width: 700px) {
       .dashboard-body { flex-direction: column; }
@@ -314,6 +319,7 @@
     let html = `<div class="info-seat-id">${seatLabel(id)}</div>`;
 
     if (booking) {
+      const seats64 = encodeURIComponent(JSON.stringify(booking.seats || []));
       html += `
         <div class="info-row"><span class="info-key">이메일</span><span class="info-val">${booking.email || '-'}</span></div>
         <div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(booking.phone)}</span></div>
@@ -323,7 +329,13 @@
         <label class="checkin-row">
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${id}', this.checked)"/>
           <span>티켓 수령 완료</span>
-        </label>`;
+        </label>
+        <div class="cancel-section">
+          <p class="cancel-label">예매 취소 (취소하려면 아래에 <strong style="color:#ff6b6b">예매취소</strong> 입력)</p>
+          <input class="input-target" id="cancelInput" placeholder="예매취소" oninput="document.getElementById('btnCancelBook').disabled=this.value!=='예매취소'"/>
+          <button class="btn-cancel-booking" id="btnCancelBook" disabled
+            onclick="doCancelBooking('${booking.ref}', decodeURIComponent('${seats64}'))">예매 취소</button>
+        </div>`;
     } else if (isBlocked) {
       const target = blockedInfo[id]?.target || '';
       html += `<div style="font-size:0.8rem;color:#f97316;margin:6px 0 10px;">예약 좌석</div>`;
@@ -357,11 +369,29 @@
   async function doUnblock(id) {
     blockedSeats.delete(id);
     delete blockedInfo[id];
+    delete checkins[id];
     const { doc, setDoc } = window._fs;
-    await setDoc(doc(window._db, 'seats', 'adminBlocked'), {
-      list: [...blockedSeats], info: blockedInfo,
-    });
+    await Promise.all([
+      setDoc(doc(window._db, 'seats', 'adminBlocked'), { list: [...blockedSeats], info: blockedInfo }),
+      setDoc(doc(window._db, 'seats', 'checkins'), checkins),
+    ]);
     buildMaps(); updateStats(); selectSeat(id);
+  }
+
+  async function doCancelBooking(ref, seatsJson) {
+    const seatIds = JSON.parse(seatsJson);
+    const { doc, updateDoc, getDoc, setDoc } = window._fs;
+    const db = window._db;
+    await updateDoc(doc(db, 'bookings', ref), { status: 'cancelled' });
+    const snap = await getDoc(doc(db, 'seats', 'reserved'));
+    const existing = snap.exists() ? (snap.data().list || []) : [];
+    await setDoc(doc(db, 'seats', 'reserved'), { list: existing.filter(s => !seatIds.includes(s)) });
+    seatIds.forEach(s => delete checkins[s]);
+    await setDoc(doc(db, 'seats', 'checkins'), checkins);
+    await loadData();
+    buildMaps(); updateStats();
+    selectedId = null;
+    document.getElementById('infoContent').innerHTML = '<p class="info-empty" style="color:#4ade80">예매가 취소되었습니다.</p>';
   }
 
   async function toggleCheckin(id, checked) {
