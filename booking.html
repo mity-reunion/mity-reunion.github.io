@@ -357,10 +357,10 @@
         Kakao.Auth.setAccessToken(token.access_token);
         const info = await new Promise((res, rej) =>
           Kakao.API.request({ url: '/v2/user/me', success: res, fail: rej })
-        );
+        ).catch(err => { throw new Error('사용자 정보 오류: ' + JSON.stringify(err)); });
         currentUser = {
           id: String(info.id),
-          name: info.kakao_account?.profile?.nickname || '카카오 사용자',
+          name: info.kakao_account?.profile?.nickname || info.properties?.nickname || '카카오 사용자',
           provider: 'kakao',
         };
         sessionStorage.setItem('kakao_user', JSON.stringify(currentUser));
@@ -368,8 +368,9 @@
         await afterLogin();
         return true;
       } catch (e) {
-        console.error('카카오 콜백 오류', e);
-        showToast('카카오 로그인 중 오류가 발생했습니다.');
+        const msg = e?.message || JSON.stringify(e);
+        console.error('카카오 콜백 오류:', msg);
+        showToast('오류: ' + msg.slice(0, 60));
         history.replaceState({}, '', location.pathname);
         showPage('login');
         return false;
