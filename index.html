@@ -145,7 +145,9 @@
     .setlist-logo {
       width: 72px; height: 72px;
       border-radius: 14px;
-      object-fit: cover;
+      object-fit: contain;
+      background: rgba(255,255,255,0.06);
+      padding: 6px;
       flex-shrink: 0;
       display: block;
     }
@@ -462,7 +464,7 @@
           <div class="c-detail-label">역대 참여 공연</div>
           <div class="c-tags">${m.shows.map(s=>{ const c=showColors[s]||{bg:'rgba(255,255,255,0.1)',fg:'rgba(255,255,255,0.7)'}; return `<span class="c-tag" style="background:${c.bg};color:${c.fg};border-color:transparent;">${s}</span>`; }).join('')}</div>
           ${(personShows[m.name]||[]).length > 0 ? `
-          <div class="c-show-cards">${(personShows[m.name]||[]).map(s=>{ const d=showDefs[s]; return `<div class="c-show-card" style="background:${d.bg};"><img src="${d.img}" alt="${s}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;"></div>`; }).join('')}</div>` : ''}
+          <div class="c-show-cards">${(personShows[m.name]||[]).map(s=>{ const d=showDefs[s]; return `<div class="c-show-card" style="background:rgba(255,255,255,0.06);"><img src="${d.img}" alt="${s}" style="width:100%;height:100%;object-fit:contain;padding:4px;border-radius:10px;"></div>`; }).join('')}</div>` : ''}
 
         </div>
         <button class="c-close" onclick="closeOverlay()" aria-label="닫기">×</button>`;
