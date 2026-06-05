@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>M.I.T.Y REUNION — 관리자</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const app = initializeApp({
+      apiKey: "AIzaSyDiJwsuZuItXz4Cs0ZondQ2rfjcWBpIN3Y",
+      authDomain: "mity-reunion.firebaseapp.com",
+      projectId: "mity-reunion",
+    });
+    const db = getFirestore(app);
+    window._db = db;
+    window._fs = { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs };
+  </script>
+  <style>
+    :root {
+      --black: #0a0a0a; --white: #fff; --red: #cc2200;
+      --border: rgba(255,255,255,0.15); --muted: rgba(255,255,255,0.5);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; }
+
+    /* ── 로그인 ── */
+    #pageLogin { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-wrap { width: 320px; display: flex; flex-direction: column; gap: 12px; }
+    .login-wrap h1 { font-size: 1rem; font-weight: 900; letter-spacing: 0.2em; text-align: center; margin-bottom: 12px; }
+    .login-wrap input { width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 4px; color: #fff; font-family: inherit; font-size: 0.9rem; outline: none; }
+    .login-wrap input:focus { border-color: rgba(255,255,255,0.4); }
+    .btn-login { padding: 13px; background: var(--white); color: var(--black); border: none; border-radius: 4px; font-family: inherit; font-weight: 900; font-size: 0.9rem; cursor: pointer; box-shadow: 3px 3px 0 var(--red); }
+    .login-error { font-size: 0.78rem; color: #ff6b6b; text-align: center; display: none; }
+
+    /* ── 대시보드 ── */
+    #pageDashboard { display: none; flex-direction: column; min-height: 100vh; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 28px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--black); z-index: 10; }
+    header h1 { font-size: 0.9rem; font-weight: 900; letter-spacing: 0.15em; }
+    .stats { display: flex; gap: 20px; }
+    .stat { text-align: center; }
+    .stat-val { font-size: 1.2rem; font-weight: 900; }
+    .stat-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; }
+    .btn-logout-admin { font-size: 0.75rem; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 6px 14px; cursor: pointer; font-family: inherit; }
+
+    .dashboard-body { display: flex; flex: 1; gap: 0; }
+
+    /* 좌석 맵 */
+    .seat-area { flex: 1; padding: 28px; overflow-x: auto; }
+    .stage-label { text-align: center; font-size: 0.65rem; letter-spacing: 0.3em; color: var(--muted); padding: 8px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 16px; }
+    .seat-map { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; margin-bottom: 8px; }
+    .seat-row { display: flex; align-items: center; gap: 5px; }
+    .seat-aisle { width: 22px; text-align: center; font-size: 0.55rem; color: var(--muted); font-weight: 700; flex-shrink: 0; }
+    .seat {
+      width: 28px; height: 24px; border-radius: 3px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1);
+      transition: transform 0.1s, border-color 0.1s; font-size: 0; flex-shrink: 0;
+    }
+    .seat:hover { transform: scale(1.12); border-color: rgba(255,255,255,0.6); }
+    .seat.booked   { background: rgba(204,34,0,0.55); border-color: #cc2200; }
+    .seat.blocked  { background: rgba(251,146,60,0.55); border-color: #f97316; }
+    .seat.wc-seat  { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); }
+    .seat.selected-info { outline: 2px solid #fff; outline-offset: 2px; }
+    .seat-gap { width: 14px; flex-shrink: 0; }
+
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+    .leg { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
+    .leg-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+    /* 정보 패널 */
+    .info-panel { width: 280px; flex-shrink: 0; border-left: 1px solid var(--border); padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+    .info-panel-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); }
+    .info-empty { font-size: 0.82rem; color: rgba(255,255,255,0.3); }
+    .info-seat-id { font-size: 1.1rem; font-weight: 900; }
+    .info-row { display: flex; flex-direction: column; gap: 3px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .info-key { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--muted); }
+    .info-val { font-size: 0.85rem; word-break: break-all; }
+    .btn-block   { width: 100%; padding: 11px; background: rgba(251,146,60,0.2); color: #f97316; border: 1px solid #f97316; border-radius: 4px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
+    .btn-block:hover { background: rgba(251,146,60,0.35); }
+    .btn-unblock { width: 100%; padding: 11px; background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
+    .btn-unblock:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    @media (max-width: 700px) {
+      .dashboard-body { flex-direction: column; }
+      .info-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="pageLogin">
+  <div class="login-wrap">
+    <h1>M.I.T.Y REUNION 관리자</h1>
+    <input type="text" id="inputId" placeholder="아이디" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <input type="password" id="inputPw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn-login" onclick="doLogin()">로그인</button>
+    <p class="login-error" id="loginError">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+  </div>
+</div>
+
+<!-- 대시보드 -->
+<div id="pageDashboard">
+  <header>
+    <h1>M.I.T.Y REUNION — 예매 관리</h1>
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="statBooked">-</div><div class="stat-label">예매</div></div>
+      <div class="stat"><div class="stat-val" id="statBlocked">-</div><div class="stat-label">차단</div></div>
+      <div class="stat"><div class="stat-val" id="statAvail">-</div><div class="stat-label">잔여</div></div>
+    </div>
+    <button class="btn-logout-admin" onclick="doLogout()">로그아웃</button>
+  </header>
+
+  <div class="dashboard-body">
+    <div class="seat-area">
+      <div class="stage-label">STAGE</div>
+      <div class="seat-map" id="mapB2F"></div>
+      <div style="height:10px"></div>
+      <div class="seat-map" id="mapB1F"></div>
+      <div class="legend">
+        <div class="leg"><div class="leg-dot" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25)"></div>선택 가능</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(204,34,0,0.55);border:1px solid #cc2200"></div>예매됨</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(251,146,60,0.55);border:1px solid #f97316"></div>관리자 차단</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(56,189,248,0.2);border:1px solid rgba(56,189,248,0.5)"></div>휠체어석</div>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <p class="info-panel-title">좌석 정보</p>
+      <div id="infoContent"><p class="info-empty">좌석을 클릭하면 정보가 표시됩니다</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── 관리자 인증 ──
+  const ADMIN_ID = 'admin';
+  const ADMIN_PW = 'mity260711';
+
+  function doLogin() {
+    const id = document.getElementById('inputId').value;
+    const pw = document.getElementById('inputPw').value;
+    if (id === ADMIN_ID && pw === ADMIN_PW) {
+      sessionStorage.setItem('admin_auth', '1');
+      showDashboard();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('admin_auth');
+    location.reload();
+  }
+
+  window.addEventListener('load', () => {
+    if (sessionStorage.getItem('admin_auth')) showDashboard();
+  });
+
+  // ── 데이터 ──
+  let bookedSeats  = new Set(); // 실제 예매
+  let blockedSeats = new Set(); // 관리자 차단
+  let bookingMap   = {};        // seatId → booking 객체
+  const TOTAL = 7*16 + 4*12 + 4; // B2F + B1F + L열
+
+  async function showDashboard() {
+    document.getElementById('pageLogin').style.display = 'none';
+    document.getElementById('pageDashboard').style.display = 'flex';
+    await loadData();
+    buildMaps();
+    updateStats();
+  }
+
+  async function loadData() {
+    const waitDb = () => new Promise(res => {
+      const t = setInterval(() => { if (window._db) { clearInterval(t); res(); } }, 50);
+    });
+    await waitDb();
+    const { doc, getDoc, collection, query, where, getDocs } = window._fs;
+    const db = window._db;
+
+    // 예매된 좌석
+    const resSnap = await getDoc(doc(db, 'seats', 'reserved'));
+    bookedSeats = new Set(resSnap.exists() ? (resSnap.data().list || []) : []);
+
+    // 관리자 차단 좌석
+    const blkSnap = await getDoc(doc(db, 'seats', 'adminBlocked'));
+    blockedSeats = new Set(blkSnap.exists() ? (blkSnap.data().list || []) : []);
+
+    // 확정 예매 내역
+    const q = query(collection(db, 'bookings'), where('status', '==', 'confirmed'));
+    const snap = await getDocs(q);
+    bookingMap = {};
+    snap.forEach(d => {
+      const b = d.data();
+      (b.seats || []).forEach(s => { bookingMap[s] = b; });
+    });
+  }
+
+  function updateStats() {
+    const booked  = Object.keys(bookingMap).length;
+    const blocked = [...blockedSeats].filter(s => !bookingMap[s]).length;
+    const avail   = TOTAL - booked - blocked;
+    document.getElementById('statBooked').textContent  = booked;
+    document.getElementById('statBlocked').textContent = blocked;
+    document.getElementById('statAvail').textContent   = Math.max(0, avail);
+  }
+
+  // ── 좌석 맵 빌드 ──
+  function makeAisle(label) {
+    const el = document.createElement('div');
+    el.className = 'seat-aisle'; el.textContent = label; return el;
+  }
+
+  function addSeat(rowEl, id, isWC = false) {
+    const btn = document.createElement('button');
+    let cls = 'seat' + (isWC ? ' wc-seat' : '');
+    if (bookingMap[id])   cls += ' booked';
+    else if (blockedSeats.has(id)) cls += ' blocked';
+    btn.className = cls;
+    btn.dataset.id = id;
+    btn.title = id;
+    btn.onclick = () => selectSeat(id);
+    rowEl.appendChild(btn);
+  }
+
+  function buildMaps() {
+    const b2f = document.getElementById('mapB2F');
+    const b1f = document.getElementById('mapB1F');
+    b2f.innerHTML = ''; b1f.innerHTML = '';
+
+    ['A','B','C','D','E','F','G'].forEach(row => {
+      const rowEl = document.createElement('div'); rowEl.className = 'seat-row';
+      for (let s = 1; s <= 8; s++) addSeat(rowEl, `${row}-${s}`);
+      rowEl.appendChild(makeAisle(row));
+      for (let s = 9; s <= 16; s++) addSeat(rowEl, `${row}-${s}`);
+      b2f.appendChild(rowEl);
+    });
+
+    ['H','I','J','K'].forEach(row => {
+      const rowEl = document.createElement('div'); rowEl.className = 'seat-row';
+      for (let s = 1; s <= 6; s++) addSeat(rowEl, `${row}-${s}`);
+      rowEl.appendChild(makeAisle(row));
+      for (let s = 7; s <= 12; s++) addSeat(rowEl, `${row}-${s}`);
+      b1f.appendChild(rowEl);
+    });
+
+    // L열
+    const rowL = document.createElement('div'); rowL.className = 'seat-row';
+    const spacer = document.createElement('div'); spacer.style.cssText = 'width:181px;flex-shrink:0;';
+    rowL.appendChild(spacer);
+    rowL.appendChild(makeAisle('L'));
+    addSeat(rowL, 'L-WC1', true); addSeat(rowL, 'L-WC2', true);
+    addSeat(rowL, 'L-1'); addSeat(rowL, 'L-2');
+    b1f.appendChild(rowL);
+  }
+
+  // ── 좌석 선택 & 정보 표시 ──
+  let selectedId = null;
+
+  function seatLabel(id) {
+    if (id.includes('WC')) return `L열 휠체어 ${id.replace(/[^0-9]/g,'')}`;
+    return `${id.split('-')[0]}열 ${id.split('-')[1]}번`;
+  }
+
+  function selectSeat(id) {
+    if (selectedId) {
+      const prev = document.querySelector(`[data-id="${selectedId}"]`);
+      if (prev) prev.classList.remove('selected-info');
+    }
+    selectedId = id;
+    const btn = document.querySelector(`[data-id="${id}"]`);
+    if (btn) btn.classList.add('selected-info');
+
+    const booking = bookingMap[id];
+    const isBlocked = blockedSeats.has(id);
+    const panel = document.getElementById('infoContent');
+
+    let html = `<div class="info-seat-id">${seatLabel(id)}</div>`;
+
+    if (booking) {
+      html += `
+        <div class="info-row"><span class="info-key">예매자</span><span class="info-val">${booking.userName || '-'}</span></div>
+        <div class="info-row"><span class="info-key">이메일</span><span class="info-val">${booking.email || '-'}</span></div>
+        <div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(booking.phone)}</span></div>
+        <div class="info-row"><span class="info-key">예매번호</span><span class="info-val">${booking.ref}</span></div>
+        <div class="info-row"><span class="info-key">예매 좌석</span><span class="info-val">${(booking.seats||[]).map(seatLabel).join(', ')}</span></div>
+        <div class="info-row" style="border:none"><span class="info-key">예매일시</span><span class="info-val">${fmtDate(booking.createdAt)}</span></div>`;
+    } else if (isBlocked) {
+      html += `<div style="font-size:0.82rem;color:#f97316;margin:8px 0">관리자 차단 좌석</div>`;
+      html += `<button class="btn-unblock" onclick="toggleBlock('${id}', false)">차단 해제</button>`;
+    } else {
+      html += `<div style="font-size:0.82rem;color:var(--muted);margin:8px 0">선택 가능한 좌석</div>`;
+      html += `<button class="btn-block" onclick="toggleBlock('${id}', true)">예약석으로 차단</button>`;
+    }
+    panel.innerHTML = html;
+  }
+
+  // ── 관리자 차단 토글 ──
+  async function toggleBlock(id, block) {
+    const { doc, setDoc } = window._fs;
+    if (block) {
+      blockedSeats.add(id);
+    } else {
+      blockedSeats.delete(id);
+    }
+    await setDoc(doc(window._db, 'seats', 'adminBlocked'), { list: [...blockedSeats] });
+    buildMaps();
+    updateStats();
+    selectSeat(id);
+  }
+
+  // ── 유틸 ──
+  function fmtPhone(p) {
+    if (!p) return '-';
+    return p.replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
+  }
+  function fmtDate(iso) {
+    if (!iso) return '-';
+    return iso.slice(0,16).replace('T',' ');
+  }
+</script>
+</body>
+</html>

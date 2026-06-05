@@ -642,16 +642,18 @@
       showPage('email');
     }
 
-    // ── Firestore: 예약된 좌석 로드 ──
+    // ── Firestore: 예약된 좌석 로드 (실제 예매 + 관리자 차단 합산) ──
     async function loadReserved() {
       reserved.clear();
       if (!window._db) return;
       const { doc, getDoc } = window._firestoreLib;
       try {
-        const snap = await getDoc(doc(window._db, 'seats', 'reserved'));
-        if (snap.exists()) {
-          (snap.data().list || []).forEach(s => reserved.add(s));
-        }
+        const [resSnap, blkSnap] = await Promise.all([
+          getDoc(doc(window._db, 'seats', 'reserved')),
+          getDoc(doc(window._db, 'seats', 'adminBlocked')),
+        ]);
+        if (resSnap.exists()) (resSnap.data().list || []).forEach(s => reserved.add(s));
+        if (blkSnap.exists()) (blkSnap.data().list || []).forEach(s => reserved.add(s));
       } catch(e) { console.warn('Firestore 로드 실패', e); }
     }
 

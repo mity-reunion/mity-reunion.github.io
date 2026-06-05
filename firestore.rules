@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 예약된 좌석 목록 — 누구나 읽기, 쓰기 가능 (예매/취소)
+    // 예약된 좌석 목록 (실제 예매 + 관리자 차단)
     match /seats/{docId} {
       allow read: if true;
       allow write: if true;
