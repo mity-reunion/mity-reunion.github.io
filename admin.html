@@ -120,6 +120,13 @@
     .btn-cancel-booking:not(:disabled):hover { background: rgba(204,34,0,0.3); }
     .btn-cancel-booking:disabled { opacity: 0.35; cursor: not-allowed; }
 
+    .btn-history { width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; color: var(--muted); font-family: inherit; font-size: 0.78rem; cursor: pointer; text-align: left; margin-top: 12px; }
+    .btn-history:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .history-list { margin-top: 8px; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+    .history-item { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+    .history-action-lbl { font-size: 0.78rem; font-weight: 700; }
+    .history-meta-lbl { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
     @media (max-width: 700px) {
       .dashboard-body { flex-direction: column; }
       .info-panel { width: 100%; border-left: none; border-top: 1px solid var(--border); }
@@ -397,6 +404,7 @@
         <input class="input-target" id="targetInput" placeholder="대상자 이름 (선택 사항)" />
         <button class="btn-block" onclick="doBlock('${id}')">예약석으로 지정</button>`;
     }
+    html += `<button class="btn-history" onclick="toggleHistory('${id}')">▾ 히스토리</button><div id="historyList"></div>`;
     panel.innerHTML = html;
   }
 
@@ -408,6 +416,7 @@
     await setDoc(doc(window._db, 'seats', 'adminBlocked'), {
       list: [...blockedSeats], info: blockedInfo,
     });
+    logHistory(id, 'blocked', { target });
     buildMaps(); updateStats(); selectSeat(id);
   }
 
@@ -420,6 +429,7 @@
       setDoc(doc(window._db, 'seats', 'adminBlocked'), { list: [...blockedSeats], info: blockedInfo }),
       setDoc(doc(window._db, 'seats', 'checkins'), checkins),
     ]);
+    logHistory(id, 'unblocked');
     buildMaps(); updateStats(); selectSeat(id);
   }
 
@@ -435,11 +445,13 @@
     // 예매 문서에서 해당 좌석만 제거, 좌석이 모두 없어지면 전체 취소
     const bkSnap = await getDoc(doc(db, 'bookings', ref));
     if (bkSnap.exists()) {
-      const remaining = (bkSnap.data().seats || []).filter(s => s !== seatId);
+      const bkData = bkSnap.data();
+      const remaining = (bkData.seats || []).filter(s => s !== seatId);
       await updateDoc(doc(db, 'bookings', ref), {
         seats: remaining,
         ...(remaining.length === 0 ? { status: 'cancelled' } : {}),
       });
+      logHistory(seatId, 'cancelled', { ref: bkData.ref, email: bkData.email, phone: bkData.phone });
     }
 
     // 체크인 제거
@@ -458,8 +470,70 @@
     else delete checkins[id];
     const { doc, setDoc } = window._fs;
     await setDoc(doc(window._db, 'seats', 'checkins'), checkins);
+    logHistory(id, checked ? 'checked-in' : 'checked-out');
     const btn = document.querySelector(`[data-id="${id}"]`);
     if (btn) btn.classList.toggle('checked-in', checked);
+  }
+
+  // ── 히스토리 ──
+  async function logHistory(seatId, action, extra = {}) {
+    const { at: atOverride, by: byOverride, ...rest } = extra;
+    const entry = {
+      action,
+      by: byOverride !== undefined ? byOverride : currentAdmin,
+      at: atOverride || new Date().toISOString(),
+      ...rest,
+    };
+    const { doc, getDoc, setDoc } = window._fs;
+    const ref = doc(window._db, 'seatHistory', seatId);
+    const snap = await getDoc(ref);
+    const events = snap.exists() ? (snap.data().events || []) : [];
+    await setDoc(ref, { events: [...events, entry] });
+  }
+
+  async function toggleHistory(seatId) {
+    const btn  = document.querySelector('.btn-history');
+    const list = document.getElementById('historyList');
+    if (list.dataset.loaded) {
+      list.dataset.loaded = '';
+      list.className = '';
+      list.innerHTML = '';
+      if (btn) btn.textContent = '▾ 히스토리';
+      return;
+    }
+    if (btn) btn.textContent = '▴ 히스토리 (로딩 중...)';
+    list.innerHTML = '';
+
+    const { doc, getDoc } = window._fs;
+    const snap = await getDoc(doc(window._db, 'seatHistory', seatId));
+    const stored = snap.exists() ? (snap.data().events || []) : [];
+
+    const all = [...stored];
+    const booking = bookingMap[seatId];
+    if (booking?.createdAt) {
+      const already = stored.some(e => e.action === 'booked' && e.ref === booking.ref);
+      if (!already) all.push({ action: 'booked', by: null, at: booking.createdAt, ref: booking.ref, email: booking.email, phone: booking.phone });
+    }
+    all.sort((a, b) => (a.at < b.at ? 1 : -1));
+
+    if (btn) btn.textContent = '▴ 히스토리';
+    list.dataset.loaded = '1';
+
+    if (all.length === 0) {
+      list.innerHTML = '<p style="color:var(--muted);font-size:0.75rem;padding:8px 0">기록 없음</p>';
+      return;
+    }
+
+    const labelMap = { booked:'예매됨', cancelled:'취소됨', 'checked-in':'수령 완료', 'checked-out':'수령 취소', blocked:'예약 지정', unblocked:'예약 해제' };
+    const colorMap = { booked:'#cc2200', cancelled:'#ff6b6b', 'checked-in':'#a78bfa', 'checked-out':'#9ca3af', blocked:'#f97316', unblocked:'#9ca3af' };
+
+    list.className = 'history-list';
+    list.innerHTML = all.map(e => `
+      <div class="history-item">
+        <div class="history-action-lbl" style="color:${colorMap[e.action]||'#fff'}">${labelMap[e.action]||e.action}</div>
+        <div class="history-meta-lbl">${e.by||'예매자'} · ${fmtDate(e.at)}</div>
+        ${e.email ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.3)">${e.email}${e.phone ? ' · ' + fmtPhone(e.phone) : ''}</div>` : ''}
+      </div>`).join('');
   }
 
   // ── 검색 ──

@@ -25,5 +25,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    // 좌석별 액션 히스토리
+    match /seatHistory/{seatId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }
