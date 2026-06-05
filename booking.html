@@ -9,7 +9,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiJwsuZuItXz4Cs0ZondQ2rfjcWBpIN3Y",
@@ -26,7 +26,7 @@
     window._db = db;
     window._auth = auth;
     window._firestoreLib = { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs };
-    window._authLib = { sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut };
+    window._authLib = { isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged, signOut };
   </script>
 
   <style>
@@ -335,6 +335,7 @@
     // ── 상수 ──
     const MAX_SEATS = 2;
     const SITE_URL  = 'https://mity-reunion.github.io/booking.html';
+    const EMAIL_AUTH_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/emailAuth';
 
     // ── 상태 ──
     let currentUser = null;   // { id, email, phone }
@@ -442,20 +443,23 @@
         }
       }
 
-      // 일반 메일 전송
+      // Cloud Function으로 이메일 전송
       btn.textContent = '전송 중...';
       try {
-        await window._authLib.sendSignInLinkToEmail(window._auth, email, {
-          url: `${SITE_URL}?email=${encodeURIComponent(email)}`,
-          handleCodeInApp: true,
+        const res = await fetch(EMAIL_AUTH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
         });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || data.error || '전송 실패');
         sessionStorage.setItem('emailForSignIn', email);
         localStorage.setItem('emailForSignIn', email);
         document.getElementById('sentEmailAddr').textContent = email;
         showPage('emailSent');
       } catch(e) {
         console.error('이메일 전송 오류', e);
-        showToast('전송 실패: ' + (e.code || e.message));
+        showToast('전송 실패: ' + e.message);
       } finally {
         btn.disabled = false; btn.textContent = '인증 메일 보내기';
       }
