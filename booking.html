@@ -966,6 +966,10 @@
       }
       document.getElementById('navStep').textContent =
         name === 'seat' ? '좌석 선택' : name === 'done' ? '' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : '이메일 인증';
+      const authPages = ['loading', 'email', 'emailSent', 'phone'];
+      const hbg = document.getElementById('bookHamburger');
+      if (authPages.includes(name)) hbg.style.display = 'none';
+      else hbg.style.removeProperty('display');
     }
 
     let toastTimer;
