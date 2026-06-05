@@ -81,6 +81,7 @@
     .seat.booked   { background: rgba(204,34,0,0.55); border-color: #cc2200; }
     .seat.blocked  { background: rgba(251,146,60,0.55); border-color: #f97316; }
     .seat.wc-seat  { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); }
+    .seat.checked-in { opacity: 0.45; }
     .seat.selected-info { outline: 2px solid #fff; outline-offset: 2px; }
 
     .legend { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; padding: 0 20px; }
@@ -99,6 +100,12 @@
     .btn-block:hover { background: rgba(251,146,60,0.35); }
     .btn-unblock { width: 100%; padding: 11px; background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
     .btn-unblock:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .input-target { width: 100%; padding: 10px 12px; margin-bottom: 8px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 4px; color: #fff; font-family: inherit; font-size: 0.85rem; outline: none; }
+    .input-target:focus { border-color: rgba(255,255,255,0.4); }
+    .input-target::placeholder { color: rgba(255,255,255,0.3); }
+    .checkin-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .checkin-row input[type=checkbox] { width: 17px; height: 17px; accent-color: #4ade80; cursor: pointer; flex-shrink: 0; }
+    .checkin-row span { font-size: 0.85rem; }
 
     @media (max-width: 700px) {
       .dashboard-body { flex-direction: column; }
@@ -182,10 +189,12 @@
   });
 
   // ── 데이터 ──
-  let bookedSeats  = new Set(); // 실제 예매
-  let blockedSeats = new Set(); // 관리자 차단
+  let bookedSeats  = new Set();
+  let blockedSeats = new Set();
+  let blockedInfo  = {};        // seatId → { target }
   let bookingMap   = {};        // seatId → booking 객체
-  const TOTAL = 7*16 + 4*12 + 4; // B2F + B1F + L열
+  let checkins     = {};        // seatId → boolean
+  const TOTAL = 7*16 + 4*12 + 4;
 
   async function showDashboard() {
     document.getElementById('pageLogin').style.display = 'none';
@@ -203,19 +212,20 @@
     const { doc, getDoc, collection, query, where, getDocs } = window._fs;
     const db = window._db;
 
-    // 예매된 좌석
-    const resSnap = await getDoc(doc(db, 'seats', 'reserved'));
-    bookedSeats = new Set(resSnap.exists() ? (resSnap.data().list || []) : []);
+    const [resSnap, blkSnap, chkSnap, bkSnap] = await Promise.all([
+      getDoc(doc(db, 'seats', 'reserved')),
+      getDoc(doc(db, 'seats', 'adminBlocked')),
+      getDoc(doc(db, 'seats', 'checkins')),
+      getDocs(query(collection(db, 'bookings'), where('status', '==', 'confirmed'))),
+    ]);
 
-    // 관리자 차단 좌석
-    const blkSnap = await getDoc(doc(db, 'seats', 'adminBlocked'));
+    bookedSeats  = new Set(resSnap.exists() ? (resSnap.data().list || []) : []);
     blockedSeats = new Set(blkSnap.exists() ? (blkSnap.data().list || []) : []);
+    blockedInfo  = blkSnap.exists() ? (blkSnap.data().info || {}) : {};
+    checkins     = chkSnap.exists() ? chkSnap.data() : {};
 
-    // 확정 예매 내역
-    const q = query(collection(db, 'bookings'), where('status', '==', 'confirmed'));
-    const snap = await getDocs(q);
     bookingMap = {};
-    snap.forEach(d => {
+    bkSnap.forEach(d => {
       const b = d.data();
       (b.seats || []).forEach(s => { bookingMap[s] = b; });
     });
@@ -239,11 +249,12 @@
   function addSeat(rowEl, id, isWC = false) {
     const btn = document.createElement('button');
     let cls = 'seat' + (isWC ? ' wc-seat' : '');
-    if (bookingMap[id])   cls += ' booked';
+    if (bookingMap[id])        cls += ' booked';
     else if (blockedSeats.has(id)) cls += ' blocked';
+    if (checkins[id])          cls += ' checked-in';
     btn.className = cls;
     btn.dataset.id = id;
-    btn.title = id;
+    btn.title = seatLabel(id);
     btn.onclick = () => selectSeat(id);
     rowEl.appendChild(btn);
   }
@@ -296,42 +307,70 @@
     const btn = document.querySelector(`[data-id="${id}"]`);
     if (btn) btn.classList.add('selected-info');
 
-    const booking = bookingMap[id];
+    const booking   = bookingMap[id];
     const isBlocked = blockedSeats.has(id);
+    const isChecked = !!checkins[id];
     const panel = document.getElementById('infoContent');
-
     let html = `<div class="info-seat-id">${seatLabel(id)}</div>`;
 
     if (booking) {
       html += `
-        <div class="info-row"><span class="info-key">예매자</span><span class="info-val">${booking.userName || '-'}</span></div>
         <div class="info-row"><span class="info-key">이메일</span><span class="info-val">${booking.email || '-'}</span></div>
         <div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(booking.phone)}</span></div>
         <div class="info-row"><span class="info-key">예매번호</span><span class="info-val">${booking.ref}</span></div>
         <div class="info-row"><span class="info-key">예매 좌석</span><span class="info-val">${(booking.seats||[]).map(seatLabel).join(', ')}</span></div>
-        <div class="info-row" style="border:none"><span class="info-key">예매일시</span><span class="info-val">${fmtDate(booking.createdAt)}</span></div>`;
+        <div class="info-row"><span class="info-key">예매일시</span><span class="info-val">${fmtDate(booking.createdAt)}</span></div>
+        <label class="checkin-row">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${id}', this.checked)"/>
+          <span>티켓 수령 완료</span>
+        </label>`;
     } else if (isBlocked) {
-      html += `<div style="font-size:0.82rem;color:#f97316;margin:8px 0">예약 좌석</div>`;
-      html += `<button class="btn-unblock" onclick="toggleBlock('${id}', false)">예약 해제</button>`;
+      const target = blockedInfo[id]?.target || '';
+      html += `<div style="font-size:0.8rem;color:#f97316;margin:6px 0 10px;">예약 좌석</div>`;
+      if (target) html += `<div class="info-row"><span class="info-key">대상자</span><span class="info-val">${target}</span></div>`;
+      html += `
+        <label class="checkin-row">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${id}', this.checked)"/>
+          <span>티켓 수령 완료</span>
+        </label>
+        <button class="btn-unblock" onclick="doUnblock('${id}')">예약 해제</button>`;
     } else {
-      html += `<div style="font-size:0.82rem;color:var(--muted);margin:8px 0">선택 가능한 좌석</div>`;
-      html += `<button class="btn-block" onclick="toggleBlock('${id}', true)">예약석으로 지정</button>`;
+      html += `
+        <div style="font-size:0.8rem;color:var(--muted);margin:6px 0 10px;">선택 가능한 좌석</div>
+        <input class="input-target" id="targetInput" placeholder="대상자 이름 (선택 사항)" />
+        <button class="btn-block" onclick="doBlock('${id}')">예약석으로 지정</button>`;
     }
     panel.innerHTML = html;
   }
 
-  // ── 관리자 차단 토글 ──
-  async function toggleBlock(id, block) {
+  async function doBlock(id) {
+    const target = (document.getElementById('targetInput')?.value || '').trim();
+    blockedSeats.add(id);
+    blockedInfo[id] = { target };
     const { doc, setDoc } = window._fs;
-    if (block) {
-      blockedSeats.add(id);
-    } else {
-      blockedSeats.delete(id);
-    }
-    await setDoc(doc(window._db, 'seats', 'adminBlocked'), { list: [...blockedSeats] });
-    buildMaps();
-    updateStats();
-    selectSeat(id);
+    await setDoc(doc(window._db, 'seats', 'adminBlocked'), {
+      list: [...blockedSeats], info: blockedInfo,
+    });
+    buildMaps(); updateStats(); selectSeat(id);
+  }
+
+  async function doUnblock(id) {
+    blockedSeats.delete(id);
+    delete blockedInfo[id];
+    const { doc, setDoc } = window._fs;
+    await setDoc(doc(window._db, 'seats', 'adminBlocked'), {
+      list: [...blockedSeats], info: blockedInfo,
+    });
+    buildMaps(); updateStats(); selectSeat(id);
+  }
+
+  async function toggleCheckin(id, checked) {
+    if (checked) checkins[id] = true;
+    else delete checkins[id];
+    const { doc, setDoc } = window._fs;
+    await setDoc(doc(window._db, 'seats', 'checkins'), checkins);
+    const btn = document.querySelector(`[data-id="${id}"]`);
+    if (btn) btn.classList.toggle('checked-in', checked);
   }
 
   // ── 유틸 ──
