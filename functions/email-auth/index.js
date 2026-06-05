@@ -2,7 +2,13 @@ const functions = require('@google-cloud/functions-framework');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 
-admin.initializeApp();
+const SA_KEY = process.env.FIREBASE_SA_KEY;
+if (SA_KEY) {
+  const credential = admin.credential.cert(JSON.parse(Buffer.from(SA_KEY, 'base64').toString()));
+  admin.initializeApp({ credential });
+} else {
+  admin.initializeApp();
+}
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://mity-reunion.github.io';
 const SITE_URL = 'https://mity-reunion.github.io/booking.html';
