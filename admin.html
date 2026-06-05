@@ -81,8 +81,16 @@
     .seat.booked   { background: rgba(204,34,0,0.55); border-color: #cc2200; }
     .seat.blocked  { background: rgba(251,146,60,0.55); border-color: #f97316; }
     .seat.wc-seat  { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); }
-    .seat.checked-in { opacity: 0.45; }
+    .seat.checked-in { background: rgba(70,70,70,0.75) !important; border-color: rgba(110,110,110,0.6) !important; }
+    .seat.search-match { outline: 2px solid #facc15; outline-offset: 2px; }
     .seat.selected-info { outline: 2px solid #fff; outline-offset: 2px; }
+
+    .search-wrap { display: flex; gap: 8px; padding: 0 20px; width: 100%; max-width: 480px; }
+    .search-input { flex: 1; padding: 9px 14px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); border-radius: 4px; color: #fff; font-family: inherit; font-size: 0.85rem; outline: none; }
+    .search-input:focus { border-color: rgba(255,255,255,0.4); }
+    .search-input::placeholder { color: rgba(255,255,255,0.3); }
+    .btn-search { padding: 9px 18px; background: rgba(255,255,255,0.1); border: 1px solid var(--border); border-radius: 4px; color: #fff; font-family: inherit; font-size: 0.82rem; cursor: pointer; white-space: nowrap; }
+    .btn-search:hover { background: rgba(255,255,255,0.18); }
 
     .legend { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; padding: 0 20px; }
     .leg { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
@@ -145,6 +153,12 @@
 
   <div class="dashboard-body">
     <div class="seat-area">
+      <div class="search-wrap">
+        <input class="search-input" id="searchInput" placeholder="전화번호 뒷 4자리 또는 이메일로 검색"
+          onkeydown="if(event.key==='Enter') doSearch()" />
+        <button class="btn-search" onclick="doSearch()">검색</button>
+        <button class="btn-search" onclick="clearSearch()" style="background:none;border-color:transparent;color:var(--muted)">✕</button>
+      </div>
       <div class="seat-scroll-wrap">
         <div class="seat-inner">
           <div class="stage-label">STAGE</div>
@@ -158,6 +172,7 @@
         <div class="leg"><div class="leg-dot" style="background:rgba(204,34,0,0.55);border:1px solid #cc2200"></div>예매됨</div>
         <div class="leg"><div class="leg-dot" style="background:rgba(251,146,60,0.55);border:1px solid #f97316"></div>예약 좌석</div>
         <div class="leg"><div class="leg-dot" style="background:rgba(56,189,248,0.2);border:1px solid rgba(56,189,248,0.5)"></div>휠체어석</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(70,70,70,0.75);border:1px solid rgba(110,110,110,0.6)"></div>티켓 수령 완료</div>
       </div>
     </div>
 
@@ -401,6 +416,49 @@
     await setDoc(doc(window._db, 'seats', 'checkins'), checkins);
     const btn = document.querySelector(`[data-id="${id}"]`);
     if (btn) btn.classList.toggle('checked-in', checked);
+  }
+
+  // ── 검색 ──
+  function doSearch() {
+    const q = document.getElementById('searchInput').value.trim();
+    clearSearchHighlight();
+    if (!q) return;
+
+    const isPhone4 = /^\d{4}$/.test(q);
+    const matched = new Set();
+
+    Object.entries(bookingMap).forEach(([seatId, b]) => {
+      const phoneMatch = isPhone4 && b.phone && b.phone.slice(-4) === q;
+      const emailMatch = !isPhone4 && b.email && b.email.toLowerCase().includes(q.toLowerCase());
+      if (phoneMatch || emailMatch) matched.add(seatId);
+    });
+
+    if (matched.size === 0) {
+      alert('검색 결과가 없습니다.');
+      return;
+    }
+
+    matched.forEach(id => {
+      const el = document.querySelector(`[data-id="${id}"]`);
+      if (el) el.classList.add('search-match');
+    });
+
+    // 첫 번째 결과로 스크롤 & 선택
+    const firstId = [...matched][0];
+    const firstEl = document.querySelector(`[data-id="${firstId}"]`);
+    if (firstEl) {
+      firstEl.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+      selectSeat(firstId);
+    }
+  }
+
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    clearSearchHighlight();
+  }
+
+  function clearSearchHighlight() {
+    document.querySelectorAll('.seat.search-match').forEach(el => el.classList.remove('search-match'));
   }
 
   // ── 유틸 ──
