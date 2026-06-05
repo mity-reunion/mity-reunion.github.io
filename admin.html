@@ -430,6 +430,7 @@
     seatIds.forEach(s => { delete checkins[s]; });
     await setDoc(doc(db, 'seats', 'checkins'), { ...checkins });
     await loadData();
+    seatIds.forEach(s => { delete checkins[s]; }); // loadData 캐시가 구버전 반환 시 보정
     buildMaps(); updateStats();
     selectedId = null;
     document.getElementById('infoContent').innerHTML = '<p class="info-empty" style="color:#4ade80">예매가 취소되었습니다.</p>';
