@@ -227,7 +227,8 @@
 
   window.addEventListener('load', () => {
     const saved = sessionStorage.getItem('admin_auth');
-    if (saved) { currentAdmin = saved; showDashboard(); }
+    if (saved && saved !== '1') { currentAdmin = saved; showDashboard(); }
+    else { sessionStorage.removeItem('admin_auth'); }
   });
 
   // ── 데이터 ──
