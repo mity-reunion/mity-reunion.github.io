@@ -89,20 +89,22 @@
     /* ── 좌석 ── */
     .dot-bg { background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 8px 8px; }
 
-    .seat-page { width: 100%; max-width: 900px; display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 80px 0 60px; }
+    /* 좌석 선택 페이지 — 단일 컬럼, 객석만 가로 스크롤 */
+    .seat-page { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 80px 0 60px; }
     .seat-header { text-align: center; padding: 0 20px; }
     .seat-header h2 { font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 6px; }
     .seat-header p  { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.06em; }
 
-    .seat-layout { width: 100%; display: flex; gap: 24px; align-items: flex-start; padding: 0 20px; }
-    .seat-main   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+    /* 객석 스크롤 영역 — 이 박스만 가로 스크롤 */
+    .seat-scroll-wrap {
+      width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+    .seat-scroll-wrap::-webkit-scrollbar { height: 4px; }
+    .seat-scroll-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+    .seat-scroll-inner { display: inline-flex; flex-direction: column; gap: 6px; align-items: center; min-width: max-content; padding: 4px 24px 12px; }
 
-    /* 객석 스크롤 영역 */
-    .seat-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
-    .seat-scroll-inner { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: max-content; padding: 0 4px 4px; }
-
-    .stage { width: 100%; min-width: 420px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; padding: 10px; text-align: center; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3em; color: var(--muted); }
-
+    .stage { width: 100%; min-width: 460px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 4px; padding: 10px; text-align: center; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3em; color: var(--muted); }
     .floor-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.2em; margin: 6px 0 2px; align-self: flex-start; padding-left: 26px; }
     .seat-map  { display: flex; flex-direction: column; gap: 5px; align-items: center; }
     .seat-row  { display: flex; align-items: center; gap: 5px; }
@@ -121,18 +123,19 @@
     .seat.wc-seat.selected { background: #38bdf8; border-color: #38bdf8; }
     .seat-gap { width: 14px; }
 
-    .seat-legend { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
+    /* 범례 */
+    .seat-legend { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 0 20px; }
     .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
-    .legend-dot  { width: 13px; height: 13px; border-radius: 3px; }
+    .legend-dot  { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
     .ld-avail  { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); }
     .ld-sel    { background: var(--white); }
     .ld-res    { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
     .ld-wc     { background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.4); }
 
-    /* 사이드바 */
-    .seat-sidebar { width: 210px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 14px; position: sticky; top: 80px; }
-    .sidebar-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); }
-    .sidebar-seats { min-height: 56px; }
+    /* 선택 좌석 요약 (하단) */
+    .seat-summary { width: min(480px, 90vw); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .summary-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); }
+    .summary-seats { min-height: 32px; }
     .sidebar-seat-item { font-size: 0.8rem; padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .remove-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; padding: 0 2px; transition: color 0.15s; }
     .remove-btn:hover { color: var(--red); }
@@ -178,8 +181,6 @@
 
     @media (max-width: 680px) {
       nav { padding: 16px 20px; }
-      .seat-layout { flex-direction: column; padding: 0 16px; }
-      .seat-sidebar { width: 100%; position: static; }
     }
   </style>
 </head>
@@ -241,33 +242,30 @@
         <p>원하는 좌석을 선택해 주세요 · 최대 2석 · 무료</p>
       </div>
 
-      <div class="seat-layout fade-up">
-        <div class="seat-main">
-          <div class="seat-scroll-wrap">
-            <div class="seat-scroll-inner">
-              <div class="stage">STAGE</div>
-              <p class="floor-label">B2F — 수납객석</p>
-              <div class="seat-map" id="mapB2F"></div>
-              <div style="height:10px"></div>
-              <p class="floor-label">B1F — 고정객석</p>
-              <div class="seat-map" id="mapB1F"></div>
-            </div>
-          </div>
-          <div class="seat-legend">
-            <div class="legend-item"><div class="legend-dot ld-avail"></div>선택 가능</div>
-            <div class="legend-item"><div class="legend-dot ld-sel"></div>선택됨</div>
-            <div class="legend-item"><div class="legend-dot ld-res"></div>예매 완료</div>
-            <div class="legend-item"><div class="legend-dot ld-wc"></div>휠체어석</div>
-          </div>
+      <div class="seat-scroll-wrap fade-up">
+        <div class="seat-scroll-inner">
+          <div class="stage">STAGE</div>
+          <p class="floor-label">B2F — 수납객석</p>
+          <div class="seat-map" id="mapB2F"></div>
+          <div style="height:10px"></div>
+          <p class="floor-label">B1F — 고정객석</p>
+          <div class="seat-map" id="mapB1F"></div>
         </div>
+      </div>
 
-        <div class="seat-sidebar">
-          <p class="sidebar-title">선택한 좌석</p>
-          <div class="sidebar-seats" id="sidebarSeats">
-            <p class="sidebar-empty">선택된 좌석이 없습니다</p>
-          </div>
-          <button class="btn-book" id="btnBook" disabled onclick="confirmBooking()">예매 확정</button>
+      <div class="seat-legend fade-up">
+        <div class="legend-item"><div class="legend-dot ld-avail"></div>선택 가능</div>
+        <div class="legend-item"><div class="legend-dot ld-sel"></div>선택됨</div>
+        <div class="legend-item"><div class="legend-dot ld-res"></div>예매 완료</div>
+        <div class="legend-item"><div class="legend-dot ld-wc"></div>휠체어석</div>
+      </div>
+
+      <div class="seat-summary fade-up">
+        <p class="summary-title">선택한 좌석</p>
+        <div class="summary-seats" id="sidebarSeats">
+          <p class="sidebar-empty">선택된 좌석이 없습니다</p>
         </div>
+        <button class="btn-book" id="btnBook" disabled onclick="confirmBooking()">예매 확정</button>
       </div>
     </div>
   </div>
