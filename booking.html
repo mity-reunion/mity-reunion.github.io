@@ -10,7 +10,7 @@
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiJwsuZuItXz4Cs0ZondQ2rfjcWBpIN3Y",
@@ -24,7 +24,7 @@
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
     window._db = db;
-    window._firestoreLib = { doc, setDoc, getDoc, updateDoc };
+    window._firestoreLib = { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs };
   </script>
 
   <style>
@@ -313,6 +313,7 @@
         client_id: NAVER_CLIENT,
         redirect_uri: REDIRECT_URI,
         state,
+        scope: 'name mobile',
       });
       location.href = 'https://nid.naver.com/oauth2.0/authorize?' + params.toString();
     }
@@ -363,7 +364,7 @@
 
     // ── 카카오 로그인 (auth code redirect 방식) ──
     function loginKakao() {
-      Kakao.Auth.authorize({ redirectUri: REDIRECT_URI });
+      Kakao.Auth.authorize({ redirectUri: REDIRECT_URI, scope: 'phone_number' });
     }
 
     async function handleKakaoCallback(code) {
@@ -392,6 +393,7 @@
           id: String(info.id),
           name: info.kakao_account?.profile?.nickname || info.properties?.nickname || '카카오 사용자',
           provider: 'kakao',
+          phone: normalizePhone(info.kakao_account?.phone_number || ''),
         };
         sessionStorage.setItem('kakao_user', JSON.stringify(currentUser));
         history.replaceState({}, '', location.pathname);
@@ -429,7 +431,7 @@
         if (data.resultcode === '00') {
           const name = data.response?.name || '네이버 사용자';
           const id   = data.response?.id   || ('naver_' + Date.now());
-          currentUser = { id: 'naver_' + id, name, provider: 'naver' };
+          currentUser = { id: 'naver_' + id, name, provider: 'naver', phone: normalizePhone(data.response?.mobile || '') };
           sessionStorage.setItem('naver_user', JSON.stringify(currentUser));
           history.replaceState({}, '', location.pathname);
           await afterLogin();
@@ -451,8 +453,52 @@
       document.getElementById('navUser').textContent = currentUser.name;
       document.getElementById('btnLogout').style.display = '';
       await loadReserved();
+
+      // 전화번호로 중복 예매 확인
+      if (currentUser.phone) {
+        const existing = await findBookingByPhone(currentUser.phone);
+        if (existing) {
+          showExistingBooking(existing);
+          return;
+        }
+      }
+
       showPage('seat');
       buildSeats();
+    }
+
+    // ── 전화번호로 기존 예매 조회 ──
+    async function findBookingByPhone(phone) {
+      if (!window._db) return null;
+      const { collection, query, where, getDocs } = window._firestoreLib;
+      try {
+        const q = query(
+          collection(window._db, 'bookings'),
+          where('phone', '==', phone),
+          where('status', '==', 'confirmed')
+        );
+        const snap = await getDocs(q);
+        if (!snap.empty) return snap.docs[0].data();
+      } catch(e) { console.warn('중복 예매 확인 실패', e); }
+      return null;
+    }
+
+    // ── 이미 예매된 경우 완료 화면 표시 ──
+    function showExistingBooking(booking) {
+      document.getElementById('doneRef').textContent = booking.ref;
+      document.getElementById('doneSeats').textContent =
+        (booking.seats || []).map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+      document.querySelector('#pageDone .done-title').textContent = '이미 예매하셨습니다';
+      document.querySelector('#pageDone .done-sub').textContent = '아래 예매번호를 공연 당일 보여주세요.';
+      showPage('done');
+    }
+
+    // ── 전화번호 정규화 (+82 10-xxxx-xxxx → 01012345678) ──
+    function normalizePhone(phone) {
+      if (!phone) return '';
+      const digits = phone.replace(/\D/g, '');
+      if (digits.startsWith('82') && digits.length >= 11) return '0' + digits.slice(2);
+      return digits;
     }
 
     // ── 로그아웃 ──
@@ -492,6 +538,7 @@
         userId: currentUser.id,
         userName: currentUser.name,
         provider: currentUser.provider,
+        phone: currentUser.phone || '',
         seats: [...seats],
         amount: 0,
         createdAt: new Date().toISOString(),
