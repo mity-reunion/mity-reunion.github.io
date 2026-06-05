@@ -392,7 +392,7 @@
   (function() {
     const members = [
       { name:"황건휘",  gen:"1기",   shows:["무한동력","Next to Normal"] },
-      { name:"김상민",  gen:"1기",   shows:["Next to Normal"] },
+      { name:"김상민",  gen:"1기",   shows:["Next to Normal"],                                                                                  photo:"images/profiles/1기 김상민.JPG" },
       { name:"이미정",  gen:"3기",   shows:["Avenue Q","I Love You Because","무한동력","Next to Normal","The Last Five Years","Little Women"] },
       { name:"조혜진",  gen:"3.5기", shows:["I Love You Because","무한동력","소행성 B612","Little Women"] },
       { name:"성현지",  gen:"5기",   shows:["Next to Normal","콩칠팔새삼륙","Fun Home"] },
@@ -400,12 +400,12 @@
       { name:"이정호",  gen:"5기",   shows:["Next to Normal","콩칠팔새삼륙","Fun Home","Little Women"] },
       { name:"오다현",  gen:"5기",   shows:["Next to Normal","콩칠팔새삼륙","Fun Home"] },
       { name:"정효경",  gen:"5.5기", shows:["콩칠팔새삼륙","Fun Home","The Last Five Years","Little Women","M.I.T.Y Festival","어쩌면 해피엔딩"] },
-      { name:"김지영",  gen:"6기",   shows:["Fun Home","The Last Five Years","Little Women","The Mad Ones","M.I.T.Y Festival","어쩌면 해피엔딩"] },
+      { name:"김지영",  gen:"6기",   shows:["Fun Home","The Last Five Years","Little Women","The Mad Ones","M.I.T.Y Festival","어쩌면 해피엔딩"], photo:"images/profiles/6기_김지영.jpg" },
       { name:"우정화",  gen:"6.5기", shows:["Fun Home","The Last Five Years","Little Women","M.I.T.Y Festival"] },
       { name:"김승희",  gen:"7기",   shows:["Little Women"] },
-      { name:"김연진",  gen:"7기",   shows:["Little Women","M.I.T.Y Festival","The Mad Ones"] },
-      { name:"조현서",  gen:"8기",   shows:["어쩌면 해피엔딩","You & It","Airport Baby","Edges","이솝이야기"] },
-      { name:"김다현",  gen:"11기",  shows:["Airport Baby","Edges","명동로망스","이솝이야기"] },
+      { name:"김연진",  gen:"7기",   shows:["Little Women","M.I.T.Y Festival","The Mad Ones"],                                                  photo:"images/profiles/7기 김연진.jpg" },
+      { name:"조현서",  gen:"8기",   shows:["어쩌면 해피엔딩","You & It","Airport Baby","Edges","이솝이야기"],                                   photo:"images/profiles/8기 조현서.jpg" },
+      { name:"김다현",  gen:"11기",  shows:["Airport Baby","Edges","명동로망스","이솝이야기"],                                                   photo:"images/profiles/11기 김다현.jpeg" },
       { name:"오유민",  gen:"",      shows:[] },
     ];
     const personShows = {
@@ -476,7 +476,7 @@
       card.className = 'c-card';
       card.innerHTML = `
         <div class="c-photo" style="background:${bgs[i%bgs.length]};color:${fgs[i%fgs.length]};">
-          ${m.name[0]}
+          ${m.photo ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;display:block;">` : m.name[0]}
           <span class="c-gen-badge">${m.gen}</span>
         </div>
         <div class="c-body">
@@ -495,7 +495,7 @@
       const fg = fgs[idx % fgs.length];
       const bg = bgs[idx % bgs.length];
       document.getElementById('cDetailInner').innerHTML = `
-        <div class="c-detail-photo" style="background:${bg};color:${fg};">${m.name[0]}</div>
+        <div class="c-detail-photo" style="background:${bg};color:${fg};">${m.photo ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : m.name[0]}</div>
         <div style="flex:1;">
           <div class="c-detail-name">${m.name}</div>
           <div class="c-detail-gen">${m.gen}</div>
