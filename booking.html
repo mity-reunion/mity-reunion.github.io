@@ -187,12 +187,17 @@
     .btn-book:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
     /* ── 완료 ── */
-    .done-box { width: min(440px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
-    .done-icon { font-size: 3rem; }
-    .done-title { font-size: 1.6rem; font-weight: 900; }
-    .done-sub   { font-size: 0.85rem; color: var(--muted); line-height: 1.8; }
-    .btn-home   { margin-top: 8px; padding: 12px 32px; background: var(--white); color: var(--black); border: none; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.9rem; font-weight: 900; cursor: pointer; box-shadow: 3px 3px 0 var(--red); transition: transform 0.12s; }
-    .btn-home:hover { transform: translate(-1px,-1px); }
+    .done-box   { width: min(440px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+    .done-title { font-size: 0.8rem; font-weight: 900; letter-spacing: 0.2em; color: var(--muted); }
+    .done-info  { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; }
+    .done-row   { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .done-row:last-child { border-bottom: none; }
+    .done-key   { font-size: 0.7rem; letter-spacing: 0.1em; color: var(--muted); flex-shrink: 0; padding-top: 2px; }
+    .done-val   { font-size: 0.88rem; font-weight: 500; text-align: right; }
+    .btn-home   { margin-top: 4px; padding: 10px 28px; background: none; color: var(--muted); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.8rem; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+    .btn-home:hover { color: #fff; border-color: rgba(255,255,255,0.5); }
+    .btn-cancel-red { margin-top: 4px; padding: 10px 28px; background: rgba(204,34,0,0.12); color: #ff6b6b; border: 1px solid rgba(204,34,0,0.4); border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.8rem; cursor: pointer; transition: background 0.15s; }
+    .btn-cancel-red:hover { background: rgba(204,34,0,0.25); }
     .btn-cancel { margin-top: 4px; padding: 10px 28px; background: none; color: var(--muted); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.8rem; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
     .btn-cancel:hover { color: var(--red); border-color: var(--red); }
     .btn-seat-view { margin-top: 4px; padding: 10px 28px; background: none; color: var(--muted); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.8rem; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
@@ -213,7 +218,6 @@
     .modal-actions button { flex: 1; padding: 12px; border: none; border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
     .btn-modal-cancel { background: rgba(255,255,255,0.08); color: var(--muted); }
     .btn-modal-confirm { background: var(--red); color: #fff; }
-    .btn-home:hover { transform: translate(-1px,-1px); }
 
     /* ── 로딩 ── */
     .loading-box { display: flex; flex-direction: column; align-items: center; gap: 20px; }
@@ -344,13 +348,16 @@
   <!-- 예매 완료 -->
   <div class="page" id="pageDone">
     <div class="done-box fade-up">
-      <div class="done-icon">🎭</div>
-      <h2 class="done-title">예매 완료!</h2>
-      <p class="done-sub">예매가 성공적으로 완료되었습니다.</p>
-      <p class="done-sub" id="doneSeats"></p>
+      <h2 class="done-title">예매내역</h2>
+      <div class="done-info">
+        <div class="done-row">
+          <span class="done-key">예매 좌석</span>
+          <span class="done-val" id="doneSeats">—</span>
+        </div>
+      </div>
       <button class="btn-home" onclick="location.href='index.html'">메인으로 돌아가기</button>
       <button class="btn-seat-view" onclick="showSeatView()">좌석현황 보기</button>
-      <button class="btn-cancel" id="btnCancelBooking" style="display:none" onclick="openCancelModal()">예매 취소하기</button>
+      <button class="btn-cancel-red" id="btnCancelBooking" style="display:none" onclick="openCancelModal()">예매 취소하기</button>
     </div>
   </div>
 
@@ -592,8 +599,6 @@
       currentBookingSeats = booking.seats || [];
       document.getElementById('doneSeats').textContent =
         currentBookingSeats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
-      document.querySelector('#pageDone .done-title').textContent = '이미 예매하셨습니다';
-      document.querySelector('#pageDone .done-sub').textContent = '예매가 완료되었습니다.';
       document.getElementById('btnCancelBooking').style.display = '';
       showPage('done');
     }
@@ -624,9 +629,7 @@
         currentBookingSeats = [];
         document.getElementById('btnCancelBooking').style.display = 'none';
 
-        // 예매 완료 화면을 신규 예매용으로 초기화하고 좌석 선택으로 이동
-        document.querySelector('#pageDone .done-title').textContent = '예매 완료!';
-        document.querySelector('#pageDone .done-sub').textContent = '예매가 성공적으로 완료되었습니다.';
+        // 예매 취소 후 좌석 선택으로 이동
         reserved.clear();
         await loadReserved();
         seatsBuilt = false;
