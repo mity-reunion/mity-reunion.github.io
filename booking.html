@@ -357,23 +357,38 @@
 
       // 이메일 링크 콜백 처리
       if (isSignInWithEmailLink(auth, location.href)) {
-        let email = sessionStorage.getItem('emailForSignIn');
-        if (!email) email = prompt('인증하신 이메일 주소를 입력해주세요:');
-        if (!email) { showPage('email'); return; }
-        signInWithEmailLink(auth, email, location.href)
-          .then(result => {
-            sessionStorage.removeItem('emailForSignIn');
-            history.replaceState({}, '', location.pathname);
-            currentUser = { id: result.user.uid, email: result.user.email, phone: '' };
-            showPage('phone');
-          })
-          .catch(e => {
-            console.error('이메일 인증 오류', e);
-            showToast('인증에 실패했습니다. 다시 시도해주세요.');
-            history.replaceState({}, '', location.pathname);
-            showPage('email');
-          });
+        const pendingUrl = location.href;
+        const email = sessionStorage.getItem('emailForSignIn') || localStorage.getItem('emailForSignIn');
+        if (email) {
+          // 같은 기기 — 바로 인증
+          signInWithEmailLink(auth, email, pendingUrl)
+            .then(result => {
+              sessionStorage.removeItem('emailForSignIn');
+              localStorage.removeItem('emailForSignIn');
+              history.replaceState({}, '', location.pathname);
+              currentUser = { id: result.user.uid, email: result.user.email, phone: '' };
+              showPage('phone');
+            })
+            .catch(e => {
+              console.error('이메일 인증 오류', e);
+              showToast('인증 링크가 만료되었거나 유효하지 않습니다.');
+              history.replaceState({}, '', location.pathname);
+              showPage('email');
+            });
+        } else {
+          // 다른 기기에서 링크를 열었을 때 — 이메일 재입력 안내
+          localStorage.setItem('pendingSignInUrl', pendingUrl);
+          history.replaceState({}, '', location.pathname);
+          showPage('email');
+          document.querySelector('#pageEmail .auth-sub').textContent = '인증을 완료하려면 이메일을 다시 입력해주세요';
+        }
         return;
+      }
+
+      // 다른 기기 인증 대기 중인 URL 처리
+      const pendingUrl = localStorage.getItem('pendingSignInUrl');
+      if (pendingUrl) {
+        window._pendingSignInUrl = pendingUrl;
       }
 
       // Auth 상태 감지
@@ -393,19 +408,48 @@
       });
     }
 
-    // ── 이메일 인증 메일 전송 ──
+    // ── 이메일 인증 메일 전송 (또는 다른 기기 인증 완료) ──
     async function sendEmailLink() {
       const email = document.getElementById('emailInput').value.trim();
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         showToast('올바른 이메일 주소를 입력해주세요.'); return;
       }
       const btn = document.querySelector('#pageEmail .btn-primary');
-      btn.disabled = true; btn.textContent = '전송 중...';
+      btn.disabled = true; btn.textContent = '처리 중...';
+
+      // 다른 기기에서 링크를 열었을 때 — pending URL로 바로 인증
+      const pendingUrl = window._pendingSignInUrl || localStorage.getItem('pendingSignInUrl');
+      if (pendingUrl) {
+        try {
+          const { signInWithEmailLink } = window._authLib;
+          const result = await signInWithEmailLink(window._auth, email, pendingUrl);
+          localStorage.removeItem('pendingSignInUrl');
+          localStorage.removeItem('emailForSignIn');
+          delete window._pendingSignInUrl;
+          currentUser = { id: result.user.uid, email: result.user.email, phone: '' };
+          showPage('phone');
+          return;
+        } catch(e) {
+          showToast('인증 실패: 이메일을 확인하거나 새 링크를 받아주세요.');
+          localStorage.removeItem('pendingSignInUrl');
+          delete window._pendingSignInUrl;
+          btn.textContent = '인증 메일 보내기';
+          btn.disabled = false;
+          document.querySelector('#pageEmail .auth-sub').textContent = 'M.I.T.Y REUNION · 07.11 SAT 2PM';
+          return;
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      // 일반 메일 전송
+      btn.textContent = '전송 중...';
       try {
         await window._authLib.sendSignInLinkToEmail(window._auth, email, {
           url: SITE_URL, handleCodeInApp: true,
         });
         sessionStorage.setItem('emailForSignIn', email);
+        localStorage.setItem('emailForSignIn', email);
         document.getElementById('sentEmailAddr').textContent = email;
         showPage('emailSent');
       } catch(e) {
