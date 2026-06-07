@@ -2,34 +2,38 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 예약된 좌석 목록 (실제 예매 + 관리자 차단)
+    // 예약된 좌석 목록 — 읽기는 공개, 쓰기는 관리자(admin claim) 또는 Cloud Function(Admin SDK)만
     match /seats/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
-    // 예매 내역 — 누구나 읽기/쓰기 가능 (로그인은 앱 레벨에서 처리)
+    // 예매 내역 — 생성은 Cloud Function 전용, 읽기/수정은 본인 or 관리자만
     match /bookings/{bookingId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if request.auth != null &&
+                  (resource.data.userId == request.auth.uid ||
+                   request.auth.token.admin == true);
+      allow create: if false; // createBooking Cloud Function (Admin SDK) 전용
+      allow update: if request.auth != null &&
+                    (resource.data.userId == request.auth.uid ||
+                     request.auth.token.admin == true);
+      allow delete: if false;
     }
 
-    // 사용자 프로필 (이메일-전화번호 매핑)
+    // 사용자 프로필 — 본인만 읽기/쓰기
     match /users/{userId} {
-      allow read: if true;
-      allow write: if true;
+      allow read, write: if request.auth != null &&
+                         request.auth.uid == userId;
     }
 
-    // 관리자 인증 — 읽기만 허용 (비밀번호는 SHA-256 해시로 저장)
+    // 관리자 인증 — 클라이언트 직접 접근 완전 차단 (adminLogin Cloud Function 전용)
     match /admin/credentials {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if false;
     }
 
-    // 좌석별 액션 히스토리
+    // 좌석별 액션 히스토리 — 인증된 사용자(관리자)만
     match /seatHistory/{seatId} {
-      allow read: if true;
-      allow write: if true;
+      allow read, write: if request.auth != null;
     }
   }
 }

@@ -407,7 +407,10 @@
     // ── 상수 ──
     const MAX_SEATS = 2;
     const SITE_URL  = 'https://mity-reunion.github.io/booking.html';
-    const EMAIL_AUTH_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/emailAuth';
+    const EMAIL_AUTH_URL    = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/emailAuth';
+    const CREATE_BOOKING_URL  = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/createBooking';
+    const CANCEL_BOOKING_URL  = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/cancelBooking';
+    const CHANGE_BOOKING_URL  = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/changeBooking';
 
     // ── 상태 ──
     let currentUser = null;   // { id, email, phone }
@@ -604,14 +607,14 @@
       buildSeats();
     }
 
-    // ── 전화번호로 기존 예매 조회 ──
+    // ── 전화번호로 기존 예매 조회 (userId 필터 포함 — Firestore 규칙 준수) ──
     async function findBookingByPhone(phone) {
-      if (!window._db) return null;
+      if (!window._db || !currentUser?.id) return null;
       const { collection, query, where, getDocs } = window._firestoreLib;
       try {
         const q = query(
           collection(window._db, 'bookings'),
-          where('phone', '==', phone),
+          where('userId', '==', currentUser.id),
           where('status', '==', 'confirmed')
         );
         const snap = await getDocs(q);
@@ -641,25 +644,19 @@
       const btn = document.getElementById('btnConfirmCancel');
       btn.disabled = true; btn.textContent = '처리 중...';
       try {
-        const { doc, updateDoc, getDoc, setDoc } = window._firestoreLib;
-        const db = window._db;
-
-        // 예매 상태를 cancelled로 변경
-        await updateDoc(doc(db, 'bookings', currentBookingRef), { status: 'cancelled' });
-
-        // 예약 좌석 목록에서 해당 좌석 제거
-        const seatDoc = doc(db, 'seats', 'reserved');
-        const snap = await getDoc(seatDoc);
-        const existing = snap.exists() ? (snap.data().list || []) : [];
-        const updated = existing.filter(s => !currentBookingSeats.includes(s));
-        await setDoc(seatDoc, { list: updated });
+        const idToken = await window._auth.currentUser.getIdToken();
+        const res = await fetch(CANCEL_BOOKING_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+          body: JSON.stringify({ ref: currentBookingRef }),
+        });
+        if (!res.ok) { showToast('취소 처리 중 오류가 발생했습니다.'); return; }
 
         closeCancelModal();
         currentBookingRef = null;
         currentBookingSeats = [];
         document.getElementById('btnCancelBooking').style.display = 'none';
 
-        // 예매 취소 후 좌석 선택으로 이동
         reserved.clear();
         await loadReserved();
         seatsBuilt = false;
@@ -731,22 +728,27 @@
       const btn = document.getElementById('btnChangeConfirm');
       btn.disabled = true; btn.textContent = '처리 중...';
       try {
-        const newSeats = [...selected];
-        const oldSeats = [...currentBookingSeats];
-        const { doc, updateDoc, getDoc, setDoc } = window._firestoreLib;
-        const db = window._db;
-        await updateDoc(doc(db, 'bookings', currentBookingRef), {
-          seats: newSeats,
-          updatedAt: new Date().toISOString(),
+        const idToken = await window._auth.currentUser.getIdToken();
+        const res = await fetch(CHANGE_BOOKING_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+          body: JSON.stringify({ ref: currentBookingRef, newSeats: [...selected] }),
         });
-        const resSnap = await getDoc(doc(db, 'seats', 'reserved'));
-        const existing = resSnap.exists() ? (resSnap.data().list || []) : [];
-        await setDoc(doc(db, 'seats', 'reserved'), {
-          list: [...new Set([...existing.filter(s => !oldSeats.includes(s)), ...newSeats])],
-        });
-        currentBookingSeats = newSeats;
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          if (err.error === 'seat_taken') {
+            showToast('선택하신 좌석이 방금 예매되었습니다. 다시 선택해 주세요.');
+            await loadReserved(); seatsBuilt = false; buildSeats();
+          } else {
+            showToast('변경 중 오류가 발생했습니다.');
+          }
+          btn.disabled = false; btn.textContent = '변경 확정';
+          return;
+        }
+        const data = await res.json();
+        currentBookingSeats = data.seats;
         document.getElementById('doneSeats').textContent =
-          newSeats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
         selected.clear();
         resetSeatPageUI();
         showPage('done');
@@ -799,33 +801,6 @@
         if (resSnap.exists()) (resSnap.data().list || []).forEach(s => reserved.add(s));
         if (blkSnap.exists()) (blkSnap.data().list || []).forEach(s => reserved.add(s));
       } catch(e) { console.warn('Firestore 로드 실패', e); }
-    }
-
-    // ── Firestore: 예약 저장 ──
-    async function saveBooking(refNum, seats) {
-      if (!window._db) return;
-      const { doc, setDoc, getDoc, updateDoc } = window._firestoreLib;
-      const db = window._db;
-
-      // 예매 내역 저장
-      await setDoc(doc(db, 'bookings', refNum), {
-        ref: refNum,
-        userId: currentUser.id,
-        userName: currentUser.email,
-        email: currentUser.email,
-        phone: currentUser.phone || '',
-        seats: [...seats],
-        amount: 0,
-        createdAt: new Date().toISOString(),
-        status: 'confirmed'
-      });
-
-      // reserved 좌석 업데이트
-      const seatDoc = doc(db, 'seats', 'reserved');
-      const snap = await getDoc(seatDoc);
-      const existing = snap.exists() ? (snap.data().list || []) : [];
-      const updated  = [...new Set([...existing, ...seats])];
-      await setDoc(seatDoc, { list: updated });
     }
 
     // ── 좌석 빌드 ──
@@ -929,18 +904,48 @@
       updateSidebar();
     }
 
-    // ── 예매 확정 ──
+    // ── 예매 확정 — createBooking Cloud Function 경유 (서버 측 검증) ──
     async function confirmBooking() {
       if (!currentUser || selected.size === 0) return;
       const btn = document.getElementById('btnBook');
       btn.disabled = true; btn.textContent = '처리 중...';
 
-      const refNum = 'MR' + Date.now().toString(36).toUpperCase();
       try {
-        await saveBooking(refNum, selected);
-        // UI 완료
+        const idToken = await window._auth.currentUser.getIdToken();
+        const res = await fetch(CREATE_BOOKING_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            seats: [...selected],
+            phone: currentUser.phone || '',
+            email: currentUser.email || '',
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          if (err.error === 'already_booked') {
+            showToast('이미 예매 내역이 있습니다.');
+          } else if (err.error === 'seat_taken') {
+            showToast('선택하신 좌석이 방금 예매되었습니다. 다시 선택해 주세요.');
+            await loadReserved(); seatsBuilt = false; buildSeats();
+          } else {
+            showToast('예매 저장 중 오류가 발생했습니다.');
+          }
+          btn.disabled = false; btn.textContent = '예매 확정';
+          return;
+        }
+
+        const data = await res.json();
+        currentBookingRef  = data.ref;
+        currentBookingSeats = data.seats;
+
         document.getElementById('doneSeats').textContent =
-          [...selected].map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+        document.getElementById('btnCancelBooking').style.display = '';
         selected.clear(); updateSidebar();
         showPage('done');
       } catch(e) {

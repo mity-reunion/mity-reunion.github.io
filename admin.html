@@ -8,14 +8,18 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     const app = initializeApp({
       apiKey: "AIzaSyDiJwsuZuItXz4Cs0ZondQ2rfjcWBpIN3Y",
       authDomain: "mity-reunion.firebaseapp.com",
       projectId: "mity-reunion",
     });
     const db = getFirestore(app);
+    const auth = getAuth(app);
     window._db = db;
     window._fs = { doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs };
+    window._adminAuth = auth;
+    window._adminAuthLib = { signInWithCustomToken, onAuthStateChanged, signOut };
   </script>
   <style>
     :root {
@@ -196,34 +200,37 @@
 </div>
 
 <script>
-  // ── 관리자 인증 ──
-  async function hashPw(pw) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  // ── 상수 ──
+  const ADMIN_LOGIN_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/adminLogin';
+
+  // ── HTML 이스케이프 (XSS 방지) ──
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // ── 관리자 인증 — adminLogin Cloud Function 경유 ──
   async function doLogin() {
     const id  = document.getElementById('inputId').value.trim();
     const pw  = document.getElementById('inputPw').value;
     const btn = document.querySelector('.btn-login');
     btn.disabled = true;
+    document.getElementById('loginError').style.display = 'none';
     try {
-      const waitDb = () => new Promise(res => {
-        const t = setInterval(() => { if (window._db) { clearInterval(t); res(); } }, 50);
+      const res = await fetch(ADMIN_LOGIN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, password: pw }),
       });
-      await waitDb();
-      const { doc, getDoc } = window._fs;
-      const snap = await getDoc(doc(window._db, 'admin', 'credentials'));
-      if (!snap.exists()) throw new Error('no credentials');
-      const accounts = snap.data().accounts || {};
-      const pwHash   = await hashPw(pw);
-      if (accounts[id] && accounts[id] === pwHash) {
-        sessionStorage.setItem('admin_auth', id);
-        currentAdmin = id;
-        showDashboard();
-      } else {
+      if (!res.ok) {
         document.getElementById('loginError').style.display = 'block';
+        return;
       }
+      const { token } = await res.json();
+      const { signInWithCustomToken } = window._adminAuthLib;
+      await signInWithCustomToken(window._adminAuth, token);
+      sessionStorage.setItem('admin_auth', id);
+      currentAdmin = id;
+      showDashboard();
     } catch {
       document.getElementById('loginError').style.display = 'block';
     } finally {
@@ -231,16 +238,36 @@
     }
   }
 
-
   function doLogout() {
     sessionStorage.removeItem('admin_auth');
+    if (window._adminAuthLib && window._adminAuth) {
+      window._adminAuthLib.signOut(window._adminAuth).catch(() => {});
+    }
     location.reload();
   }
 
   window.addEventListener('load', () => {
-    const saved = sessionStorage.getItem('admin_auth');
-    if (saved && saved !== '1') { currentAdmin = saved; showDashboard(); }
-    else { sessionStorage.removeItem('admin_auth'); }
+    const waitAuth = () => new Promise(res => {
+      const t = setInterval(() => { if (window._adminAuth && window._adminAuthLib) { clearInterval(t); res(); } }, 50);
+    });
+    waitAuth().then(() => {
+      const { onAuthStateChanged } = window._adminAuthLib;
+      onAuthStateChanged(window._adminAuth, async (user) => {
+        if (user) {
+          const tokenResult = await user.getIdTokenResult();
+          if (tokenResult.claims.admin) {
+            const savedName = sessionStorage.getItem('admin_auth');
+            currentAdmin = savedName || user.uid.replace('admin_', '');
+            showDashboard();
+            return;
+          }
+          // 인증됐지만 admin claim 없음 — 로그아웃
+          await window._adminAuthLib.signOut(window._adminAuth);
+          sessionStorage.removeItem('admin_auth');
+        }
+        // 미인증 — 로그인 페이지 유지 (기본 CSS 상태)
+      });
+    });
   });
 
   // ── 데이터 ──
@@ -372,35 +399,36 @@
 
     if (booking) {
       html += `
-        <div class="info-row"><span class="info-key">이메일</span><span class="info-val">${booking.email || '-'}</span></div>
+        <div class="info-row"><span class="info-key">이메일</span><span class="info-val">${esc(booking.email) || '-'}</span></div>
         <div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(booking.phone)}</span></div>
         <div class="info-row"><span class="info-key">예매 좌석</span><span class="info-val">${(booking.seats||[]).map(seatLabel).join(', ')}</span></div>
         <div class="info-row"><span class="info-key">예매일시</span><span class="info-val">${fmtDate(booking.createdAt)}</span></div>
         <label class="checkin-row">
-          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${id}', this.checked)"/>
-          <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${checkinBy})</span>` : ''}</span>
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${esc(id)}', this.checked)"/>
+          <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${esc(checkinBy)})</span>` : ''}</span>
         </label>
         <div class="cancel-section">
           <p class="cancel-label">이 좌석 취소 (취소하려면 아래에 <strong style="color:#ff6b6b">예매취소</strong> 입력)</p>
           <input class="input-target" id="cancelInput" placeholder="예매취소" oninput="document.getElementById('btnCancelBook').disabled=this.value!=='예매취소'"/>
           <button class="btn-cancel-booking" id="btnCancelBook" disabled
-            onclick="doCancelBooking('${booking.ref}', '${id}')">이 좌석 취소</button>
+            data-ref="${esc(booking.ref)}" data-seat="${esc(id)}"
+            onclick="doCancelBooking(this.dataset.ref, this.dataset.seat)">이 좌석 취소</button>
         </div>`;
     } else if (isBlocked) {
       const target    = blockedInfo[id]?.target || '';
       const blockedBy = blockedInfo[id]?.by || '';
       html += `<div style="font-size:0.8rem;color:#f97316;margin:6px 0 10px;">예약 좌석</div>`;
-      if (target)    html += `<div class="info-row"><span class="info-key">대상자</span><span class="info-val">${target}</span></div>`;
-      if (blockedBy) html += `<div class="info-row"><span class="info-key">예약 처리</span><span class="info-val">${blockedBy}</span></div>`;
+      if (target)    html += `<div class="info-row"><span class="info-key">대상자</span><span class="info-val">${esc(target)}</span></div>`;
+      if (blockedBy) html += `<div class="info-row"><span class="info-key">예약 처리</span><span class="info-val">${esc(blockedBy)}</span></div>`;
       html += `
         <label class="checkin-row">
-          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${id}', this.checked)"/>
-          <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${checkinBy})</span>` : ''}</span>
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${esc(id)}', this.checked)"/>
+          <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${esc(checkinBy)})</span>` : ''}</span>
         </label>
         <div class="cancel-section">
           <p class="cancel-label">예약 해제 (해제하려면 아래에 <strong style="color:#f97316">예약해제</strong> 입력)</p>
           <input class="input-target" id="unblockInput" placeholder="예약해제" oninput="document.getElementById('btnUnblock').disabled=this.value!=='예약해제'"/>
-          <button class="btn-unblock" id="btnUnblock" disabled onclick="doUnblock('${id}')">예약 해제</button>
+          <button class="btn-unblock" id="btnUnblock" disabled onclick="doUnblock('${esc(id)}')">예약 해제</button>
         </div>`;
     } else {
       html += `
@@ -534,9 +562,9 @@
     list.className = 'history-list';
     list.innerHTML = all.map(e => `
       <div class="history-item">
-        <div class="history-action-lbl" style="color:${colorMap[e.action]||'#fff'}">${labelMap[e.action]||e.action}</div>
-        <div class="history-meta-lbl">${e.by||'예매자'} · ${fmtDate(e.at)}</div>
-        ${e.email ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.3)">${e.email}${e.phone ? ' · ' + fmtPhone(e.phone) : ''}</div>` : ''}
+        <div class="history-action-lbl" style="color:${colorMap[e.action]||'#fff'}">${labelMap[e.action]||esc(e.action)}</div>
+        <div class="history-meta-lbl">${esc(e.by)||'예매자'} · ${fmtDate(e.at)}</div>
+        ${e.email ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.3)">${esc(e.email)}${e.phone ? ' · ' + fmtPhone(e.phone) : ''}</div>` : ''}
       </div>`).join('');
 
   }
