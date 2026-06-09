@@ -229,6 +229,17 @@
     .btn-modal-cancel { background: rgba(255,255,255,0.08); color: var(--muted); }
     .btn-modal-confirm { background: var(--red); color: #fff; }
 
+    /* ── 오픈 전 카운트다운 ── */
+    .preopen-box { display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
+    .preopen-sub { font-size: 0.72rem; letter-spacing: 0.2em; color: var(--muted); }
+    .countdown-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .countdown-label { font-size: 0.7rem; letter-spacing: 0.25em; color: rgba(255,255,255,0.5); }
+    .countdown-digits { display: flex; gap: 6px; align-items: flex-end; }
+    .cd-unit { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .cd-num { font-size: clamp(1.8rem, 4.5vw, 2.4rem); font-weight: 900; letter-spacing: -0.03em; line-height: 1; min-width: 2ch; text-align: center; }
+    .cd-lbl { font-size: 0.56rem; letter-spacing: 0.2em; color: rgba(255,255,255,0.4); }
+    .cd-sep { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 900; padding-bottom: 6px; color: rgba(255,255,255,0.25); line-height: 1; }
+
     /* ── 로딩 ── */
     .loading-box { display: flex; flex-direction: column; align-items: center; gap: 20px; }
     .spinner {
@@ -287,6 +298,26 @@
   <div class="book-side-menu" id="bookSideMenu">
     <span class="book-menu-user" id="navUserMobile"></span>
     <button class="book-menu-logout" id="btnLogoutMobile" style="display:none" onclick="logout(); closeBookMenu()">로그아웃</button>
+  </div>
+
+  <!-- 예매 오픈 전 -->
+  <div class="page" id="pagePreOpen">
+    <div class="preopen-box fade-up">
+      <p class="preopen-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+      <div class="countdown-wrap">
+        <p class="countdown-label">예매 오픈까지</p>
+        <div class="countdown-digits">
+          <div class="cd-unit"><span class="cd-num" id="bcdD"></span><span class="cd-lbl">DAY</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num" id="bcdH"></span><span class="cd-lbl">HOUR</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num" id="bcdM"></span><span class="cd-lbl">MIN</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num" id="bcdS"></span><span class="cd-lbl">SEC</span></div>
+        </div>
+      </div>
+      <a href="index.html" class="btn-home" style="margin-top:4px;">← 공연 소개</a>
+    </div>
   </div>
 
   <!-- 로딩 -->
@@ -490,8 +521,15 @@
     let reserved    = new Set();
     const selected  = new Set();
 
+    // ── 예매 오픈 시각 ──
+    const BOOKING_OPEN = new Date('2026-06-17T19:00:00+09:00').getTime();
+
     // ── 페이지 진입 ──
     window.addEventListener('load', () => {
+      if (Date.now() < BOOKING_OPEN) {
+        startPreOpenCountdown();
+        return;
+      }
       // Firebase Auth 모듈 로드 대기
       const waitAuth = setInterval(() => {
         if (!window._auth || !window._authLib) return;
@@ -499,6 +537,25 @@
         initAuth();
       }, 50);
     });
+
+    function startPreOpenCountdown() {
+      showPage('preOpen');
+      function pad(n) { return String(n).padStart(2, '0'); }
+      function tick() {
+        const diff = BOOKING_OPEN - Date.now();
+        if (diff <= 0) { location.reload(); return; }
+        const days  = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins  = Math.floor((diff % 3600000) / 60000);
+        const secs  = Math.floor((diff % 60000) / 1000);
+        document.getElementById('bcdD').textContent = days;
+        document.getElementById('bcdH').textContent = pad(hours);
+        document.getElementById('bcdM').textContent = pad(mins);
+        document.getElementById('bcdS').textContent = pad(secs);
+        setTimeout(tick, 1000 - (Date.now() % 1000));
+      }
+      tick();
+    }
 
     function initAuth() {
       const { isSignInWithEmailLink, signInWithEmailLink, onAuthStateChanged } = window._authLib;
@@ -1115,7 +1172,7 @@
 
     // ── 유틸 ──
     function showPage(name) {
-      const map = { loading:'pageLoading', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone', checkDone:'pageCheckDone' };
+      const map = { loading:'pageLoading', preOpen:'pagePreOpen', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone', checkDone:'pageCheckDone' };
       const next = document.getElementById(map[name]);
       const current = document.querySelector('.page.active');
       if (current && current !== next) {
