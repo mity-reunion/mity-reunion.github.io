@@ -322,6 +322,16 @@
     </div>
   </div>
 
+  <!-- 예매 마감 -->
+  <div class="page" id="pageBookingClosed">
+    <div class="preopen-box fade-up">
+      <p class="preopen-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+      <p style="font-size:1.4rem;font-weight:900;letter-spacing:0.05em;">예매가 마감되었습니다</p>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.8;text-align:center;">온라인 예매는 7월 11일 00시에 마감되었습니다.<br>예매 확인은 아래 버튼을 이용해 주세요.</p>
+      <button class="btn-home" style="margin-top:4px;" onclick="setAuthMode('check'); showPage('email');">예매확인하기</button>
+    </div>
+  </div>
+
   <!-- 로딩 -->
   <div class="page active" id="pageLoading">
     <div class="loading-box">
@@ -526,8 +536,10 @@
     let reserved    = new Set();
     const selected  = new Set();
 
-    // ── 예매 오픈 시각 ──
-    const BOOKING_OPEN = new Date('2026-06-17T19:00:00+09:00').getTime();
+    // ── 예매 오픈 / 마감 시각 ──
+    const BOOKING_OPEN  = new Date('2026-06-17T19:00:00+09:00').getTime();
+    const BOOKING_CLOSE = new Date('2026-07-11T00:00:00+09:00').getTime();
+    function isBookingClosed() { return Date.now() >= BOOKING_CLOSE; }
 
     // ── 페이지 진입 ──
     window.addEventListener('load', () => {
@@ -734,6 +746,7 @@
         if (existing) { showExistingBooking(existing); return; }
       }
 
+      if (isBookingClosed()) { showPage('bookingClosed'); return; }
       showPage('seat');
       buildSeats();
     }
@@ -764,7 +777,9 @@
       document.getElementById('doneSeats').textContent =
         currentBookingSeats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
       document.getElementById('donePhone').textContent = currentUser.phone ? formatPhone(currentUser.phone) : '—';
-      document.getElementById('btnCancelBooking').style.display = '';
+      const closed = isBookingClosed();
+      document.getElementById('btnCancelBooking').style.display = closed ? 'none' : '';
+      document.querySelector('.btn-seat-view').style.display = closed ? 'none' : '';
       showPage('done');
     }
 
@@ -773,6 +788,7 @@
     function closeCancelModal() { document.getElementById('cancelModal').classList.remove('open'); }
 
     async function confirmCancel() {
+      if (isBookingClosed()) { showToast('예매가 마감되어 취소가 불가합니다.'); closeCancelModal(); return; }
       const btn = document.getElementById('btnConfirmCancel');
       btn.disabled = true; btn.textContent = '처리 중...';
       try {
@@ -804,6 +820,7 @@
 
     // ── 좌석현황 보기 (뷰 전용) ──
     async function showSeatView() {
+      if (isBookingClosed()) { showToast('예매가 마감되어 좌석 변경이 불가합니다.'); return; }
       changeMode = true; viewOnly = false;
       await loadReserved();
       currentBookingSeats.forEach(s => { reserved.delete(s); selected.add(s); });
@@ -1122,6 +1139,7 @@
     // ── 예매 확정 — createBooking Cloud Function 경유 (서버 측 검증) ──
     async function confirmBooking() {
       if (!currentUser || selected.size === 0) return;
+      if (isBookingClosed()) { showToast('예매가 마감되었습니다.'); return; }
       const btn = document.getElementById('btnBook');
       btn.disabled = true; btn.textContent = '처리 중...';
 
@@ -1173,7 +1191,7 @@
 
     // ── 유틸 ──
     function showPage(name) {
-      const map = { loading:'pageLoading', preOpen:'pagePreOpen', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone', checkDone:'pageCheckDone' };
+      const map = { loading:'pageLoading', preOpen:'pagePreOpen', bookingClosed:'pageBookingClosed', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone', checkDone:'pageCheckDone' };
       const next = document.getElementById(map[name]);
       const current = document.querySelector('.page.active');
       if (current && current !== next) {
@@ -1186,8 +1204,8 @@
         next.classList.add('active');
       }
       document.getElementById('navStep').textContent =
-        name === 'seat' ? '좌석 선택' : name === 'done' ? '' : name === 'checkDone' ? '' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : '이메일 인증';
-      const authPages = ['loading', 'email', 'emailSent', 'phone', 'checkDone'];
+        name === 'seat' ? '좌석 선택' : name === 'done' ? '' : name === 'checkDone' ? '' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : name === 'bookingClosed' ? '' : '이메일 인증';
+      const authPages = ['loading', 'email', 'emailSent', 'phone', 'checkDone', 'bookingClosed'];
       const hbg = document.getElementById('bookHamburger');
       if (authPages.includes(name)) hbg.style.display = 'none';
       else hbg.style.removeProperty('display');
