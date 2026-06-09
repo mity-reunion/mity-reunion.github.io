@@ -503,7 +503,11 @@
           <span class="done-val" id="checkDonePhone">—</span>
         </div>
       </div>
-      <button class="btn-home" onclick="showPage('email')">돌아가기</button>
+      <div class="done-actions">
+        <button class="btn-seat-view" onclick="goToFullAuth()">좌석 변경</button>
+        <button class="btn-cancel-red" onclick="goToFullAuth()">취소하기</button>
+      </div>
+      <p style="font-size:0.7rem;color:rgba(255,255,255,0.35);text-align:center;margin-top:-4px;">이메일 인증 후 변경/취소 가능합니다</p>
     </div>
   </div>
 
@@ -972,6 +976,13 @@
       if (d.length === 11) return `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}`;
       if (d.length === 10) return `${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`;
       return phone;
+    }
+
+    function goToFullAuth() {
+      const email = document.getElementById('checkEmailInput').value.trim();
+      if (email) document.getElementById('emailInput').value = email;
+      setAuthMode('book');
+      showPage('email');
     }
 
     function openPhoneEditModal() {
