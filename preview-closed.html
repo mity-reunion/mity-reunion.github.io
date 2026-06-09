@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Preview — 예매 마감 후 화면</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --black: #000;
+      --white: #fff;
+      --red: #cc2200;
+      --border: rgba(255,255,255,0.25);
+      --muted: rgba(255,255,255,0.65);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #111; color: var(--white);
+      min-height: 100vh;
+    }
+
+    /* 프리뷰 레이아웃 */
+    .preview-header {
+      padding: 20px 32px;
+      background: rgba(255,255,200,0.07);
+      border-bottom: 1px solid rgba(255,255,200,0.15);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .preview-label {
+      font-size: 0.7rem; letter-spacing: 0.2em; color: rgba(255,255,150,0.7);
+      font-weight: 700;
+    }
+    .preview-desc {
+      font-size: 0.72rem; color: rgba(255,255,255,0.35); letter-spacing: 0.05em;
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: rgba(255,255,255,0.08);
+    }
+    @media (max-width: 700px) {
+      .preview-grid { grid-template-columns: 1fr; }
+    }
+    .preview-card {
+      background: var(--black);
+      display: flex; flex-direction: column; align-items: center;
+      padding: 80px 20px 60px;
+      min-height: 100vh;
+    }
+    .preview-card-label {
+      position: absolute;
+      top: 16px; left: 50%; transform: translateX(-50%);
+      font-size: 0.62rem; letter-spacing: 0.18em; color: rgba(255,255,150,0.5);
+      white-space: nowrap;
+    }
+    .preview-card-wrap { position: relative; width: 100%; }
+
+    /* NAV (모사) */
+    .mock-nav {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      padding: 0 0 32px; max-width: 440px;
+    }
+    .nav-logo { font-weight: 900; font-size: 0.9rem; letter-spacing: 0.2em; color: var(--white); }
+    .nav-step  { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.15em; }
+
+    /* 예매 마감 페이지 */
+    .preopen-box {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 20px; text-align: center;
+      width: min(380px, 90vw);
+    }
+    .preopen-sub { font-size: 0.72rem; letter-spacing: 0.2em; color: var(--muted); }
+    .closed-title { font-size: 1.4rem; font-weight: 900; letter-spacing: 0.05em; }
+    .closed-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.8; }
+    .btn-home {
+      margin-top: 4px; padding: 10px 28px; background: none; color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
+      font-family: inherit; font-size: 0.8rem; cursor: pointer;
+    }
+
+    /* 이메일 인증 페이지 (예매확인 탭만) */
+    .auth-box {
+      width: min(400px, 90vw);
+      display: flex; flex-direction: column; align-items: stretch;
+    }
+    .auth-tabs {
+      display: flex; width: 100%; margin-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+    .auth-tab {
+      flex: 1; background: none; border: none;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      padding: 10px; font-family: inherit; font-size: 0.8rem;
+      font-weight: 700; letter-spacing: 0.12em; color: var(--muted);
+      cursor: pointer;
+    }
+    .auth-tab.active { color: var(--white); border-bottom-color: var(--white); }
+    .auth-title { font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 8px; text-align: center; }
+    .auth-sub   { font-size: 0.82rem; color: var(--muted); letter-spacing: 0.05em; margin-bottom: 36px; text-align: center; }
+    .auth-sub.small { font-size: 0.78rem; margin-top: -24px; margin-bottom: 24px; }
+    .input-field {
+      width: 100%; padding: 14px 16px; margin-bottom: 12px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--white);
+      font-family: inherit; font-size: 0.95rem; outline: none;
+    }
+    .input-field::placeholder { color: rgba(255,255,255,0.35); }
+    .btn-primary {
+      width: 100%; padding: 14px; border: none; border-radius: 4px;
+      background: var(--white); color: var(--black);
+      font-family: inherit; font-size: 0.95rem; font-weight: 900;
+      cursor: pointer; letter-spacing: 0.06em;
+      box-shadow: 3px 3px 0 var(--red);
+    }
+    .privacy-notice {
+      margin-top: 24px; font-size: 0.7rem; color: var(--muted);
+      text-align: center; line-height: 2; padding: 16px 18px;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;
+    }
+    .privacy-notice strong { color: rgba(255,255,255,0.85); }
+
+    /* 구분선 라벨 */
+    .screen-label {
+      width: 100%; text-align: center; padding: 14px 0 0;
+      font-size: 0.62rem; letter-spacing: 0.18em; color: rgba(255,255,150,0.45);
+    }
+  </style>
+</head>
+<body>
+
+<div class="preview-header">
+  <span class="preview-label">⚠ PREVIEW — 예매 마감 후 화면</span>
+  <span class="preview-desc">2026.07.11 00:00 KST 이후</span>
+</div>
+
+<div class="preview-grid">
+
+  <!-- 화면 1: pageBookingClosed -->
+  <div class="preview-card">
+    <p class="screen-label">① 비로그인 접속 → 로그인 후 예매내역 없는 경우</p>
+    <div style="height:48px"></div>
+    <div class="mock-nav" style="max-width:380px">
+      <span class="nav-logo">M.I.T.Y REUNION</span>
+    </div>
+    <div class="preopen-box">
+      <p class="preopen-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+      <p class="closed-title">예매가 마감되었습니다</p>
+      <p class="closed-desc">온라인 예매는 7월 11일 00시에 마감되었습니다.<br>예매 확인은 아래 버튼을 이용해 주세요.</p>
+      <button class="btn-home">예매확인하기</button>
+    </div>
+  </div>
+
+  <!-- 화면 2: pageEmail (예매확인 탭만) -->
+  <div class="preview-card">
+    <p class="screen-label">② 비로그인 접속 / "예매확인하기" 클릭 후</p>
+    <div style="height:48px"></div>
+    <div class="mock-nav" style="max-width:400px">
+      <span class="nav-logo">M.I.T.Y REUNION</span>
+      <span class="nav-step">이메일 인증</span>
+    </div>
+    <div class="auth-box">
+      <!-- 예매하기 탭 숨김, 예매확인만 표시 -->
+      <div class="auth-tabs">
+        <button class="auth-tab active">예매확인</button>
+      </div>
+      <h1 class="auth-title">예매확인</h1>
+      <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+      <p class="auth-sub small">예매시 사용한 이메일과 전화번호 뒷 4자리를 입력해주세요.</p>
+      <input type="email" class="input-field" placeholder="이메일 주소" readonly/>
+      <input type="tel" class="input-field" placeholder="전화번호 뒷 4자리" readonly/>
+      <button class="btn-primary">예매 확인</button>
+      <div class="privacy-notice">
+        입력하신 이메일과 전화번호는 예매 확인 및 공연 당일 입장 확인 목적으로만 사용됩니다.<br>
+        <strong>공연 종료 후 모든 개인정보는 즉시 폐기됩니다.</strong>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
