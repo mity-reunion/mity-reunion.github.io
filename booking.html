@@ -328,7 +328,7 @@
       <p class="preopen-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
       <p style="font-size:1.4rem;font-weight:900;letter-spacing:0.05em;">예매가 마감되었습니다</p>
       <p style="font-size:0.82rem;color:var(--muted);line-height:1.8;text-align:center;">온라인 예매는 7월 11일 00시에 마감되었습니다.<br>예매 확인은 아래 버튼을 이용해 주세요.</p>
-      <button class="btn-home" style="margin-top:4px;" onclick="setAuthMode('check'); showPage('email');">예매확인하기</button>
+      <button class="btn-home" style="margin-top:4px;" onclick="document.getElementById('tabBook').style.display='none'; setAuthMode('check'); showPage('email');">예매확인하기</button>
     </div>
   </div>
 
@@ -627,6 +627,10 @@
           }
         } else {
           showPage('email');
+          if (isBookingClosed()) {
+            document.getElementById('tabBook').style.display = 'none';
+            setAuthMode('check');
+          }
         }
       });
     }
