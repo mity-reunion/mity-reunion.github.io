@@ -337,28 +337,31 @@
       </div>
 
       <!-- 예매하기 모드 -->
-      <div id="modeBook">
-        <h1 class="auth-title">로그인</h1>
+      <div id="modeBook" style="min-height:220px">
+        <h1 class="auth-title">예매하기</h1>
         <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+        <p class="auth-sub" style="margin-top:-24px;margin-bottom:24px;font-size:0.78rem;">예매를 진행할 이메일을 입력 후 인증을 진행해주세요.</p>
         <input type="email" id="emailInput" class="input-field" placeholder="이메일 주소 입력"
           onkeydown="if(event.key==='Enter') sendEmailLink()" />
         <button class="btn-primary" onclick="sendEmailLink()">인증 메일 보내기</button>
-        <div class="privacy-notice">
-          입력하신 이메일과 다음 단계의 전화번호는 예매 확인 및<br>
-          공연 당일 입장 확인 목적으로만 사용됩니다.<br>
-          <strong>공연 종료 후 모든 개인정보는 즉시 폐기됩니다.</strong>
-        </div>
       </div>
 
       <!-- 예매확인 모드 -->
-      <div id="modeCheck" style="display:none">
-        <h1 class="auth-title">예매 확인</h1>
-        <p class="auth-sub">이메일과 전화번호 뒷 4자리를 입력해 주세요</p>
+      <div id="modeCheck" style="display:none;min-height:220px">
+        <h1 class="auth-title">예매확인</h1>
+        <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+        <p class="auth-sub" style="margin-top:-24px;margin-bottom:24px;font-size:0.78rem;">예매시 사용한 이메일과 전화번호 뒷 4자리를 입력해주세요.</p>
         <input type="email" id="checkEmailInput" class="input-field" placeholder="이메일 주소"
           onkeydown="if(event.key==='Enter') document.getElementById('checkPhoneInput').focus()" />
         <input type="tel" id="checkPhoneInput" class="input-field" placeholder="전화번호 뒷 4자리" maxlength="4" inputmode="numeric"
           onkeydown="if(event.key==='Enter') lookupBooking()" />
         <button class="btn-primary" onclick="lookupBooking()">예매 확인</button>
+      </div>
+
+      <!-- 공통 안내 -->
+      <div class="privacy-notice">
+        입력하신 이메일과 전화번호는 예매 확인 및 공연 당일 입장 확인 목적으로만 사용됩니다.<br>
+        <strong>공연 종료 후 모든 개인정보는 즉시 폐기됩니다.</strong>
       </div>
     </div>
   </div>
