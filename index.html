@@ -80,6 +80,13 @@
       transform: translate(-2px, -2px);
       box-shadow: 6px 6px 0 var(--red);
     }
+    .countdown-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 16px; }
+    .countdown-label { font-size: 0.7rem; letter-spacing: 0.25em; color: rgba(255,255,255,0.5); }
+    .countdown-digits { display: flex; gap: 6px; align-items: flex-end; }
+    .cd-unit { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .cd-num { font-size: clamp(1.8rem, 4.5vw, 2.4rem); font-weight: 900; letter-spacing: -0.03em; line-height: 1; min-width: 2ch; text-align: center; }
+    .cd-lbl { font-size: 0.56rem; letter-spacing: 0.2em; color: rgba(255,255,255,0.4); }
+    .cd-sep { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 900; padding-bottom: 6px; color: rgba(255,255,255,0.25); line-height: 1; }
 
     .scroll-hint {
       display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -241,7 +248,7 @@
       <img src="images/포스터.png" alt="M.I.T.Y REUNION 포스터" />
     </div>
 
-    <a href="booking.html" class="btn-reserve">예매하기</a>
+    <div id="reserveArea"></div>
 
     <div class="scroll-hint">
       <span>SCROLL</span>
@@ -631,6 +638,52 @@
       document.getElementById('mobileBackdrop').classList.remove('open');
       document.getElementById('navHamburger').classList.remove('open');
     }
+  </script>
+  <script>
+    (function() {
+      const TARGET = new Date('2026-06-17T19:00:00+09:00').getTime();
+      const area = document.getElementById('reserveArea');
+      let built = false;
+
+      function pad(n) { return String(n).padStart(2, '0'); }
+
+      function tick() {
+        const diff = TARGET - Date.now();
+        if (diff <= 0) {
+          area.innerHTML = '<a href="booking.html" class="btn-reserve">예매하기</a>';
+          return;
+        }
+        const days  = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins  = Math.floor((diff % 3600000) / 60000);
+        const secs  = Math.floor((diff % 60000) / 1000);
+
+        if (!built) {
+          area.innerHTML =
+            '<div class="countdown-wrap">' +
+              '<p class="countdown-label">예매 오픈까지</p>' +
+              '<div class="countdown-digits">' +
+                '<div class="cd-unit"><span class="cd-num" id="cdD"></span><span class="cd-lbl">DAY</span></div>' +
+                '<span class="cd-sep">:</span>' +
+                '<div class="cd-unit"><span class="cd-num" id="cdH"></span><span class="cd-lbl">HOUR</span></div>' +
+                '<span class="cd-sep">:</span>' +
+                '<div class="cd-unit"><span class="cd-num" id="cdM"></span><span class="cd-lbl">MIN</span></div>' +
+                '<span class="cd-sep">:</span>' +
+                '<div class="cd-unit"><span class="cd-num" id="cdS"></span><span class="cd-lbl">SEC</span></div>' +
+              '</div>' +
+            '</div>';
+          built = true;
+        }
+        document.getElementById('cdD').textContent = days;
+        document.getElementById('cdH').textContent = pad(hours);
+        document.getElementById('cdM').textContent = pad(mins);
+        document.getElementById('cdS').textContent = pad(secs);
+
+        setTimeout(tick, 1000 - (Date.now() % 1000));
+      }
+
+      tick();
+    })();
   </script>
 </body>
 </html>
