@@ -529,10 +529,6 @@
 
     // ── 페이지 진입 ──
     window.addEventListener('load', () => {
-      if (Date.now() < BOOKING_OPEN) {
-        startPreOpenCountdown();
-        return;
-      }
       // Firebase Auth 모듈 로드 대기
       const waitAuth = setInterval(() => {
         if (!window._auth || !window._authLib) return;
