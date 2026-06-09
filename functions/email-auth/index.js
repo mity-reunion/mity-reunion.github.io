@@ -369,16 +369,38 @@ functions.http('checkBooking', async (req, res) => {
 
   const db = admin.firestore();
   try {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const snap = await db.collection('bookings')
-      .where('email', '==', email.trim().toLowerCase())
+      .where('email', '==', normalizedEmail)
       .get();
 
-    const booking = snap.docs.map(d => d.data()).find(d => d.status === 'confirmed');
-    if (!booking) { res.status(404).json({ error: 'not_found' }); return; }
+    const bookingDoc = snap.docs.find(d => d.data().status === 'confirmed');
+    if (!bookingDoc) { res.status(404).json({ error: 'not_found' }); return; }
+    const booking = bookingDoc.data();
 
     const storedPhone = (booking.phone || '').replace(/\D/g, '');
     if (!storedPhone || storedPhone.slice(-4) !== phoneSuffix) {
       res.status(401).json({ error: 'phone_mismatch' }); return;
+    }
+
+    // Firebase Auth 계정 존재 여부 확인 — 없으면 예매내역 삭제
+    try {
+      await admin.auth().getUserByEmail(normalizedEmail);
+    } catch (authErr) {
+      if (authErr.code === 'auth/user-not-found') {
+        await db.runTransaction(async (tx) => {
+          tx.delete(bookingDoc.ref);
+          const reservedRef = db.collection('seats').doc('reserved');
+          const reservedSnap = await tx.get(reservedRef);
+          if (reservedSnap.exists) {
+            const remaining = (reservedSnap.data().list || []).filter(s => !booking.seats.includes(s));
+            tx.set(reservedRef, { list: remaining });
+          }
+        });
+        res.status(404).json({ error: 'not_found' }); return;
+      }
+      throw authErr;
     }
 
     res.json({ ref: booking.ref, seats: booking.seats, phone: booking.phone });
