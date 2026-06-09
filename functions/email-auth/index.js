@@ -352,3 +352,38 @@ functions.http('createBooking', async (req, res) => {
     }
   }
 });
+
+// ── 예매 확인 (비인증 — 이메일 + 전화번호 뒷 4자리) ──
+functions.http('checkBooking', async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
+
+  const { email, phoneSuffix } = req.body;
+  if (!email || !phoneSuffix) {
+    res.status(400).json({ error: 'email and phoneSuffix required' }); return;
+  }
+  if (!/^\d{4}$/.test(phoneSuffix)) {
+    res.status(400).json({ error: 'phoneSuffix must be 4 digits' }); return;
+  }
+
+  const db = admin.firestore();
+  try {
+    const snap = await db.collection('bookings')
+      .where('email', '==', email.trim().toLowerCase())
+      .get();
+
+    const booking = snap.docs.map(d => d.data()).find(d => d.status === 'confirmed');
+    if (!booking) { res.status(404).json({ error: 'not_found' }); return; }
+
+    const storedPhone = (booking.phone || '').replace(/\D/g, '');
+    if (!storedPhone || storedPhone.slice(-4) !== phoneSuffix) {
+      res.status(401).json({ error: 'phone_mismatch' }); return;
+    }
+
+    res.json({ ref: booking.ref, seats: booking.seats, phone: booking.phone });
+  } catch (e) {
+    console.error('checkBooking error', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});

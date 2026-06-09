@@ -203,6 +203,9 @@
     .btn-cancel-red:hover { background: rgba(204,34,0,0.25); }
     .btn-cancel { margin-top: 4px; padding: 10px 28px; background: none; color: var(--muted); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; font-family: 'Noto Sans KR', sans-serif; font-size: 0.8rem; cursor: pointer; transition: color 0.15s, border-color 0.15s; }
     .btn-cancel:hover { color: var(--red); border-color: var(--red); }
+    .auth-tabs { display: flex; width: 100%; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .auth-tab { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 10px; font-family: inherit; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em; color: var(--muted); cursor: pointer; transition: color 0.15s; }
+    .auth-tab.active { color: var(--white); border-bottom-color: var(--white); }
     .notice-box { width: 100%; background: rgba(255,220,100,0.05); border: 1px solid rgba(255,220,100,0.22); border-radius: 6px; padding: 14px 16px; font-size: 0.77rem; color: rgba(255,255,255,0.72); line-height: 1.85; }
     .btn-phone-edit { font-size: 0.66rem; padding: 3px 9px; background: none; border: 1px solid rgba(255,255,255,0.22); border-radius: 3px; color: var(--muted); cursor: pointer; font-family: inherit; transition: color 0.15s, border-color 0.15s; flex-shrink: 0; }
     .btn-phone-edit:hover { color: var(--white); border-color: rgba(255,255,255,0.5); }
@@ -297,15 +300,34 @@
   <!-- 이메일 입력 -->
   <div class="page" id="pageEmail">
     <div class="auth-box fade-up">
-      <h1 class="auth-title">로그인</h1>
-      <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
-      <input type="email" id="emailInput" class="input-field" placeholder="이메일 주소 입력"
-        onkeydown="if(event.key==='Enter') sendEmailLink()" />
-      <button class="btn-primary" onclick="sendEmailLink()">인증 메일 보내기</button>
-      <div class="privacy-notice">
-        입력하신 이메일과 다음 단계의 전화번호는 예매 확인 및<br>
-        공연 당일 입장 확인 목적으로만 사용됩니다.<br>
-        <strong>공연 종료 후 모든 개인정보는 즉시 폐기됩니다.</strong>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tabBook" onclick="setAuthMode('book')">예매하기</button>
+        <button class="auth-tab" id="tabCheck" onclick="setAuthMode('check')">예매확인</button>
+      </div>
+
+      <!-- 예매하기 모드 -->
+      <div id="modeBook">
+        <h1 class="auth-title">로그인</h1>
+        <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+        <input type="email" id="emailInput" class="input-field" placeholder="이메일 주소 입력"
+          onkeydown="if(event.key==='Enter') sendEmailLink()" />
+        <button class="btn-primary" onclick="sendEmailLink()">인증 메일 보내기</button>
+        <div class="privacy-notice">
+          입력하신 이메일과 다음 단계의 전화번호는 예매 확인 및<br>
+          공연 당일 입장 확인 목적으로만 사용됩니다.<br>
+          <strong>공연 종료 후 모든 개인정보는 즉시 폐기됩니다.</strong>
+        </div>
+      </div>
+
+      <!-- 예매확인 모드 -->
+      <div id="modeCheck" style="display:none">
+        <h1 class="auth-title">예매 확인</h1>
+        <p class="auth-sub">이메일과 전화번호 뒷 4자리를 입력해 주세요</p>
+        <input type="email" id="checkEmailInput" class="input-field" placeholder="이메일 주소"
+          onkeydown="if(event.key==='Enter') document.getElementById('checkPhoneInput').focus()" />
+        <input type="tel" id="checkPhoneInput" class="input-field" placeholder="전화번호 뒷 4자리" maxlength="4" inputmode="numeric"
+          onkeydown="if(event.key==='Enter') lookupBooking()" />
+        <button class="btn-primary" onclick="lookupBooking()">예매 확인</button>
       </div>
     </div>
   </div>
@@ -418,6 +440,27 @@
     </div>
   </div>
 
+  <!-- 예매확인 결과 (읽기 전용) -->
+  <div class="page" id="pageCheckDone">
+    <div class="done-box fade-up">
+      <h2 class="done-title">예매내역</h2>
+      <div class="notice-box">
+        공연은 별도의 대기 없이 정시에 시작하며, 공연 시작 후 도착하신 인원은 약 20분 후 지연입장 도와드릴 예정이니 최소 공연시작 10분 전까지 도착 부탁드립니다.
+      </div>
+      <div class="done-info">
+        <div class="done-row">
+          <span class="done-key">예매 좌석</span>
+          <span class="done-val" id="checkDoneSeats">—</span>
+        </div>
+        <div class="done-row">
+          <span class="done-key">전화번호</span>
+          <span class="done-val" id="checkDonePhone">—</span>
+        </div>
+      </div>
+      <button class="btn-home" onclick="showPage('email')">돌아가기</button>
+    </div>
+  </div>
+
   <!-- 취소 확인 모달 -->
   <div class="modal-backdrop" id="cancelModal">
     <div class="modal-box">
@@ -440,6 +483,7 @@
     const CREATE_BOOKING_URL  = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/createBooking';
     const CANCEL_BOOKING_URL  = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/cancelBooking';
     const CHANGE_BOOKING_URL  = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/changeBooking';
+    const CHECK_BOOKING_URL   = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/checkBooking';
 
     // ── 상태 ──
     let currentUser = null;   // { id, email, phone }
@@ -804,6 +848,50 @@
       return digits;
     }
 
+    // ── 예매확인 탭 전환 ──
+    function setAuthMode(mode) {
+      document.getElementById('modeBook').style.display  = mode === 'book'  ? '' : 'none';
+      document.getElementById('modeCheck').style.display = mode === 'check' ? '' : 'none';
+      document.getElementById('tabBook').classList.toggle('active',  mode === 'book');
+      document.getElementById('tabCheck').classList.toggle('active', mode === 'check');
+    }
+
+    // ── 예매확인 조회 (비인증) ──
+    async function lookupBooking() {
+      const email  = document.getElementById('checkEmailInput').value.trim();
+      const suffix = document.getElementById('checkPhoneInput').value.trim();
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('올바른 이메일 주소를 입력해주세요.'); return;
+      }
+      if (!/^\d{4}$/.test(suffix)) {
+        showToast('전화번호 뒷 4자리를 정확히 입력해주세요.'); return;
+      }
+      const btn = document.querySelector('#modeCheck .btn-primary');
+      btn.disabled = true; btn.textContent = '확인 중...';
+      try {
+        const res = await fetch(CHECK_BOOKING_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, phoneSuffix: suffix }),
+        });
+        if (res.status === 404) { showToast('예매 내역을 찾을 수 없습니다.'); return; }
+        if (res.status === 401) { showToast('전화번호 뒷자리가 일치하지 않습니다.'); return; }
+        if (!res.ok) { showToast('조회 중 오류가 발생했습니다.'); return; }
+        const data = await res.json();
+        document.getElementById('checkDoneSeats').textContent =
+          data.seats.map(id => id.includes('WC')
+            ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}`
+            : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+        document.getElementById('checkDonePhone').textContent = formatPhone(data.phone);
+        showPage('checkDone');
+      } catch(e) {
+        console.error('예매 조회 오류', e);
+        showToast('조회 중 오류가 발생했습니다.');
+      } finally {
+        btn.disabled = false; btn.textContent = '예매 확인';
+      }
+    }
+
     function formatPhone(phone) {
       const d = phone.replace(/\D/g, '');
       if (d.length === 11) return `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}`;
@@ -1027,7 +1115,7 @@
 
     // ── 유틸 ──
     function showPage(name) {
-      const map = { loading:'pageLoading', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone' };
+      const map = { loading:'pageLoading', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone', checkDone:'pageCheckDone' };
       const next = document.getElementById(map[name]);
       const current = document.querySelector('.page.active');
       if (current && current !== next) {
@@ -1040,8 +1128,8 @@
         next.classList.add('active');
       }
       document.getElementById('navStep').textContent =
-        name === 'seat' ? '좌석 선택' : name === 'done' ? '' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : '이메일 인증';
-      const authPages = ['loading', 'email', 'emailSent', 'phone'];
+        name === 'seat' ? '좌석 선택' : name === 'done' ? '' : name === 'checkDone' ? '' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : '이메일 인증';
+      const authPages = ['loading', 'email', 'emailSent', 'phone', 'checkDone'];
       const hbg = document.getElementById('bookHamburger');
       if (authPages.includes(name)) hbg.style.display = 'none';
       else hbg.style.removeProperty('display');
