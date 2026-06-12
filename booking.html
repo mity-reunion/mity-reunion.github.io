@@ -709,18 +709,28 @@
       }
     }
 
-    // ── 전화번호 제출 ──
-    // ── Firestore에서 전화번호 조회 후 분기 ──
+    // ── 인증 직후 전화번호 보유 여부에 따라 분기 ──
     async function loadPhoneAndProceed() {
+      // 관리자 배정석은 전화번호 단계 없이 바로 배정 화면으로
+      if (await detectAdminReservedSeat()) {
+        adminSeatAuthMode = 'token';
+        sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
+        showAdminReservedBooking();
+        return;
+      }
+      // Firestore 프로필에 저장된 전화번호 확인
       try {
         const { doc, getDoc } = window._firestoreLib;
         const snap = await getDoc(doc(window._db, 'users', currentUser.id));
         if (snap.exists() && snap.data().phone) {
           currentUser.phone = snap.data().phone;
           sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
+          await afterLogin();
+          return;
         }
       } catch(e) { console.warn('사용자 정보 조회 실패', e); }
-      await afterLogin();
+      // 전화번호 미입력 → 전화번호 입력 화면
+      showPage('phone');
     }
 
     // 관리자 배정석 감지 — 있으면 adminReservedSeatIds/Info 설정 후 true 반환
