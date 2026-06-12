@@ -353,22 +353,36 @@ functions.http('createBooking', async (req, res) => {
   }
 });
 
-// ── 관리자 배정석 취소 (본인 이메일 인증 필요) ──
+// ── 관리자 배정석 소유권 검증 헬퍼
+// Firebase 토큰(우선) 또는 이메일+전화번호 뒷자리로 이메일 반환
+// 검증 실패 시 '__phone_required__' | '__phone_mismatch__' | null 반환
+async function resolveAdminEmail(req, info) {
+  const authHeader = req.headers.authorization || '';
+  if (authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+      return (decoded.email || '').toLowerCase() || null;
+    } catch(e) { return null; }
+  }
+  const email = (req.body.email || '').trim().toLowerCase();
+  if (!email) return null;
+  const phoneSuffix = (req.body.phoneSuffix || '').trim();
+  const seatIds = Object.keys(info).filter(k => (info[k].email || '').toLowerCase() === email);
+  if (seatIds.length === 0) return null;
+  const hasPhone = seatIds.some(k => (info[k].phone || '').replace(/\D/g, '').length >= 4);
+  if (hasPhone) {
+    if (!phoneSuffix || !/^\d{4}$/.test(phoneSuffix)) return '__phone_required__';
+    const match = seatIds.some(k => (info[k].phone || '').replace(/\D/g, '').slice(-4) === phoneSuffix);
+    if (!match) return '__phone_mismatch__';
+  }
+  return email;
+}
+
+// ── 관리자 배정석 취소 (Firebase 토큰 또는 이메일+전화번호 인증) ──
 functions.http('cancelAdminSeat', async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
-
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) { res.status(401).json({ error: 'Authentication required' }); return; }
-
-  let decodedToken;
-  try {
-    decodedToken = await admin.auth().verifyIdToken(authHeader.slice(7));
-  } catch(e) { res.status(401).json({ error: 'Invalid or expired token' }); return; }
-
-  const email = (decodedToken.email || '').toLowerCase();
-  if (!email) { res.status(400).json({ error: 'No email in token' }); return; }
 
   const db = admin.firestore();
   try {
@@ -377,9 +391,13 @@ functions.http('cancelAdminSeat', async (req, res) => {
     if (!blkSnap.exists) { res.status(404).json({ error: 'no_reserved_seat' }); return; }
 
     const data = blkSnap.data();
-    const list = data.list || [];
     const info = data.info || {};
+    const email = await resolveAdminEmail(req, info);
+    if (email === '__phone_required__') { res.status(401).json({ error: 'phone_required' }); return; }
+    if (email === '__phone_mismatch__') { res.status(401).json({ error: 'phone_mismatch' }); return; }
+    if (!email) { res.status(401).json({ error: 'auth_required' }); return; }
 
+    const list = data.list || [];
     const seatIds = Object.keys(info).filter(k => (info[k].email || '').toLowerCase() === email);
     if (seatIds.length === 0) { res.status(404).json({ error: 'no_reserved_seat' }); return; }
 
@@ -395,22 +413,11 @@ functions.http('cancelAdminSeat', async (req, res) => {
   }
 });
 
-// ── 관리자 배정석 변경 (본인 이메일 인증 필요) ──
+// ── 관리자 배정석 변경 (Firebase 토큰 또는 이메일+전화번호 인증) ──
 functions.http('changeAdminSeat', async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
-
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) { res.status(401).json({ error: 'Authentication required' }); return; }
-
-  let decodedToken;
-  try {
-    decodedToken = await admin.auth().verifyIdToken(authHeader.slice(7));
-  } catch(e) { res.status(401).json({ error: 'Invalid or expired token' }); return; }
-
-  const email = (decodedToken.email || '').toLowerCase();
-  if (!email) { res.status(400).json({ error: 'No email in token' }); return; }
 
   const { newSeats } = req.body;
   if (!Array.isArray(newSeats) || newSeats.length === 0 || newSeats.length > MAX_SEATS) {
@@ -429,10 +436,14 @@ functions.http('changeAdminSeat', async (req, res) => {
     if (!blkSnap.exists) { res.status(404).json({ error: 'no_reserved_seat' }); return; }
 
     const blkData = blkSnap.data();
-    const blkList = blkData.list || [];
     const blkInfo = blkData.info || {};
-    const resList = resSnap.exists ? (resSnap.data().list || []) : [];
+    const email = await resolveAdminEmail(req, blkInfo);
+    if (email === '__phone_required__') { res.status(401).json({ error: 'phone_required' }); return; }
+    if (email === '__phone_mismatch__') { res.status(401).json({ error: 'phone_mismatch' }); return; }
+    if (!email) { res.status(401).json({ error: 'auth_required' }); return; }
 
+    const blkList = blkData.list || [];
+    const resList = resSnap.exists ? (resSnap.data().list || []) : [];
     const oldSeatIds = Object.keys(blkInfo).filter(k => (blkInfo[k].email || '').toLowerCase() === email);
     if (oldSeatIds.length === 0) { res.status(404).json({ error: 'no_reserved_seat' }); return; }
 
