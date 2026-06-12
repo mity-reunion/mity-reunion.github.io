@@ -131,33 +131,36 @@ functions.http('adminLogin', async (req, res) => {
 });
 
 // ── 예매 취소 — 소유권 검증 + 원자적 트랜잭션 ──
+// 예매 소유권 검증 헬퍼 — Firebase 토큰 또는 email+phoneSuffix
+async function resolveBookingOwner(req, booking) {
+  const authHeader = req.headers.authorization || '';
+  if (authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+      if (booking.userId !== decoded.uid) return '__forbidden__';
+      return 'token';
+    } catch(e) { return null; }
+  }
+  const email = (req.body.email || '').trim().toLowerCase();
+  const phoneSuffix = (req.body.phoneSuffix || '').trim();
+  if (!email || !/^\d{4}$/.test(phoneSuffix)) return null;
+  if ((booking.email || '').toLowerCase() !== email) return '__forbidden__';
+  const storedDigits = (booking.phone || '').replace(/\D/g, '');
+  if (!storedDigits || storedDigits.slice(-4) !== phoneSuffix) return '__phone_mismatch__';
+  return 'direct';
+}
+
 functions.http('cancelBooking', async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
 
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-
-  let decodedToken;
-  try {
-    decodedToken = await admin.auth().verifyIdToken(authHeader.slice(7));
-  } catch (e) {
-    res.status(401).json({ error: 'Invalid or expired token' });
-    return;
-  }
-
   const { ref } = req.body;
   if (!ref || typeof ref !== 'string') {
-    res.status(400).json({ error: 'ref is required' });
-    return;
+    res.status(400).json({ error: 'ref is required' }); return;
   }
 
   const db = admin.firestore();
-
   try {
     await db.runTransaction(async (tx) => {
       const bookingRef = db.collection('bookings').doc(ref);
@@ -165,8 +168,11 @@ functions.http('cancelBooking', async (req, res) => {
       if (!bookingSnap.exists) throw Object.assign(new Error(), { code: 'NOT_FOUND' });
 
       const booking = bookingSnap.data();
-      if (booking.userId !== decodedToken.uid) throw Object.assign(new Error(), { code: 'FORBIDDEN' });
-      if (booking.status !== 'confirmed') throw Object.assign(new Error(), { code: 'NOT_CONFIRMED' });
+      const ownerResult = await resolveBookingOwner(req, booking);
+      if (ownerResult === null)              throw Object.assign(new Error(), { code: 'AUTH_REQUIRED' });
+      if (ownerResult === '__forbidden__')   throw Object.assign(new Error(), { code: 'FORBIDDEN' });
+      if (ownerResult === '__phone_mismatch__') throw Object.assign(new Error(), { code: 'FORBIDDEN' });
+      if (booking.status !== 'confirmed')   throw Object.assign(new Error(), { code: 'NOT_CONFIRMED' });
 
       const seatsToRelease = booking.seats || [];
       const reservedRef = db.collection('seats').doc('reserved');
@@ -180,6 +186,7 @@ functions.http('cancelBooking', async (req, res) => {
     res.json({ success: true });
   } catch (e) {
     if (e.code === 'NOT_FOUND')     { res.status(404).json({ error: 'Booking not found' }); return; }
+    if (e.code === 'AUTH_REQUIRED') { res.status(401).json({ error: 'Authentication required' }); return; }
     if (e.code === 'FORBIDDEN')     { res.status(403).json({ error: 'Forbidden' }); return; }
     if (e.code === 'NOT_CONFIRMED') { res.status(409).json({ error: 'Booking is not active' }); return; }
     console.error('cancelBooking error', e);
@@ -193,36 +200,18 @@ functions.http('changeBooking', async (req, res) => {
   if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
 
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-
-  let decodedToken;
-  try {
-    decodedToken = await admin.auth().verifyIdToken(authHeader.slice(7));
-  } catch (e) {
-    res.status(401).json({ error: 'Invalid or expired token' });
-    return;
-  }
-
   const { ref, newSeats } = req.body;
   if (!ref || typeof ref !== 'string') {
-    res.status(400).json({ error: 'ref is required' });
-    return;
+    res.status(400).json({ error: 'ref is required' }); return;
   }
   if (!Array.isArray(newSeats) || newSeats.length === 0 || newSeats.length > MAX_SEATS) {
-    res.status(400).json({ error: `newSeats must be 1–${MAX_SEATS} items` });
-    return;
+    res.status(400).json({ error: `newSeats must be 1–${MAX_SEATS} items` }); return;
   }
   if (!newSeats.every(s => typeof s === 'string' && VALID_SEAT_RE.test(s))) {
-    res.status(400).json({ error: 'Invalid seat ID format' });
-    return;
+    res.status(400).json({ error: 'Invalid seat ID format' }); return;
   }
 
   const db = admin.firestore();
-
   try {
     await db.runTransaction(async (tx) => {
       const bookingRef = db.collection('bookings').doc(ref);
@@ -230,15 +219,17 @@ functions.http('changeBooking', async (req, res) => {
       if (!bookingSnap.exists) throw Object.assign(new Error(), { code: 'NOT_FOUND' });
 
       const booking = bookingSnap.data();
-      if (booking.userId !== decodedToken.uid) throw Object.assign(new Error(), { code: 'FORBIDDEN' });
-      if (booking.status !== 'confirmed') throw Object.assign(new Error(), { code: 'NOT_CONFIRMED' });
+      const ownerResult = await resolveBookingOwner(req, booking);
+      if (ownerResult === null)                 throw Object.assign(new Error(), { code: 'AUTH_REQUIRED' });
+      if (ownerResult === '__forbidden__')      throw Object.assign(new Error(), { code: 'FORBIDDEN' });
+      if (ownerResult === '__phone_mismatch__') throw Object.assign(new Error(), { code: 'FORBIDDEN' });
+      if (booking.status !== 'confirmed')      throw Object.assign(new Error(), { code: 'NOT_CONFIRMED' });
 
       const oldSeats = booking.seats || [];
       const reservedRef = db.collection('seats').doc('reserved');
       const reservedSnap = await tx.get(reservedRef);
       const currentReserved = reservedSnap.exists ? (reservedSnap.data().list || []) : [];
 
-      // 기존 좌석은 제외하고 새 좌석 충돌 확인
       const reservedWithoutOwn = currentReserved.filter(s => !oldSeats.includes(s));
       if (newSeats.some(s => reservedWithoutOwn.includes(s))) {
         throw Object.assign(new Error(), { code: 'SEAT_TAKEN' });
@@ -251,6 +242,7 @@ functions.http('changeBooking', async (req, res) => {
     res.json({ success: true, seats: newSeats });
   } catch (e) {
     if (e.code === 'NOT_FOUND')     { res.status(404).json({ error: 'Booking not found' }); return; }
+    if (e.code === 'AUTH_REQUIRED') { res.status(401).json({ error: 'Authentication required' }); return; }
     if (e.code === 'FORBIDDEN')     { res.status(403).json({ error: 'Forbidden' }); return; }
     if (e.code === 'NOT_CONFIRMED') { res.status(409).json({ error: 'Booking is not active' }); return; }
     if (e.code === 'SEAT_TAKEN')    { res.status(409).json({ error: 'seat_taken' }); return; }

@@ -921,12 +921,15 @@
 
       // 일반 예매 취소
       try {
-        const idToken = await window._auth.currentUser.getIdToken();
-        const res = await fetch(CANCEL_BOOKING_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-          body: JSON.stringify({ ref: currentBookingRef }),
-        });
+        let headers = { 'Content-Type': 'application/json' };
+        let body = { ref: currentBookingRef };
+        if (adminSeatAuthMode === 'direct') {
+          body.email = adminCheckEmail;
+          body.phoneSuffix = adminCheckSuffix;
+        } else {
+          headers['Authorization'] = `Bearer ${await window._auth.currentUser.getIdToken()}`;
+        }
+        const res = await fetch(CANCEL_BOOKING_URL, { method: 'POST', headers, body: JSON.stringify(body) });
         if (!res.ok) { showToast('취소 처리 중 오류가 발생했습니다.'); return; }
 
         closeCancelModal();
@@ -1058,12 +1061,15 @@
 
       // 일반 예매 변경
       try {
-        const idToken = await window._auth.currentUser.getIdToken();
-        const res = await fetch(CHANGE_BOOKING_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-          body: JSON.stringify({ ref: currentBookingRef, newSeats: [...selected] }),
-        });
+        let headers = { 'Content-Type': 'application/json' };
+        let body = { ref: currentBookingRef, newSeats: [...selected] };
+        if (adminSeatAuthMode === 'direct') {
+          body.email = adminCheckEmail;
+          body.phoneSuffix = adminCheckSuffix;
+        } else {
+          headers['Authorization'] = `Bearer ${await window._auth.currentUser.getIdToken()}`;
+        }
+        const res = await fetch(CHANGE_BOOKING_URL, { method: 'POST', headers, body: JSON.stringify(body) });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           if (err.error === 'seat_taken') {
@@ -1077,11 +1083,17 @@
         }
         const data = await res.json();
         currentBookingSeats = data.seats;
-        document.getElementById('doneSeats').textContent =
-          data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
         selected.clear();
         resetSeatPageUI();
-        showPage('done');
+        if (adminSeatAuthMode === 'direct') {
+          document.getElementById('checkDoneSeats').textContent =
+            data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          showPage('checkDone');
+        } else {
+          document.getElementById('doneSeats').textContent =
+            data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          showPage('done');
+        }
         showToast('좌석이 변경되었습니다.');
       } catch(e) {
         console.error('좌석 변경 실패', e);
@@ -1093,7 +1105,7 @@
     function cancelChange() {
       selected.clear();
       resetSeatPageUI();
-      if (adminReservedSeatIds.length > 0 && adminSeatAuthMode === 'direct') {
+      if (adminSeatAuthMode === 'direct') {
         showPage('checkDone');
       } else {
         showPage('done');
@@ -1175,6 +1187,11 @@
             const data = await res.json();
             adminReservedSeatIds = [];
             adminReservedInfo    = null;
+            currentBookingRef    = data.ref;
+            currentBookingSeats  = data.seats;
+            adminCheckEmail      = email.trim().toLowerCase();
+            adminCheckSuffix     = suffix;
+            adminSeatAuthMode    = 'direct';
             document.getElementById('checkDoneSeats').textContent =
               data.seats.map(id => id.includes('WC')
                 ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}`
