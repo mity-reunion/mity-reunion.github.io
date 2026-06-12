@@ -353,6 +353,47 @@ functions.http('createBooking', async (req, res) => {
   }
 });
 
+// ── 관리자 배정석 지정 (이메일로 Firebase Auth 계정 생성) ──
+functions.http('assignAdminSeat', async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
+
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) { res.status(401).json({ error: 'Unauthorized' }); return; }
+  try {
+    const decoded = await admin.auth().verifyIdToken(authHeader.slice(7));
+    if (!decoded.admin) { res.status(403).json({ error: 'Not admin' }); return; }
+  } catch(e) { res.status(401).json({ error: 'Invalid token' }); return; }
+
+  const { seatId, target, by, email, phone } = req.body;
+  if (!seatId) { res.status(400).json({ error: 'seatId required' }); return; }
+
+  if (email) {
+    try { await admin.auth().getUserByEmail(email); }
+    catch(e) {
+      if (e.code === 'auth/user-not-found') await admin.auth().createUser({ email });
+      else throw e;
+    }
+  }
+
+  const db = admin.firestore();
+  const blkRef = db.collection('seats').doc('adminBlocked');
+  await db.runTransaction(async t => {
+    const snap = await t.get(blkRef);
+    const data = snap.exists ? snap.data() : { list: [], info: {} };
+    const list = data.list || [];
+    const info = data.info || {};
+    if (!list.includes(seatId)) list.push(seatId);
+    info[seatId] = { target: target || '', by: by || '' };
+    if (email) info[seatId].email = email.toLowerCase();
+    if (phone) info[seatId].phone = phone;
+    t.set(blkRef, { list, info });
+  });
+
+  res.json({ ok: true });
+});
+
 // ── 관리자 배정석 소유권 검증 헬퍼
 // Firebase 토큰(우선) 또는 이메일+전화번호 뒷자리로 이메일 반환
 // 검증 실패 시 '__phone_required__' | '__phone_mismatch__' | null 반환

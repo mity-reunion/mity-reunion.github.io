@@ -709,24 +709,15 @@
     // ── 전화번호 제출 ──
     // ── Firestore에서 전화번호 조회 후 분기 ──
     async function loadPhoneAndProceed() {
-      // 관리자 배정석 먼저 확인
-      if (await detectAdminReservedSeat()) {
-        adminSeatAuthMode = 'token';
-        sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
-        showAdminReservedBooking();
-        return;
-      }
       try {
         const { doc, getDoc } = window._firestoreLib;
         const snap = await getDoc(doc(window._db, 'users', currentUser.id));
         if (snap.exists() && snap.data().phone) {
           currentUser.phone = snap.data().phone;
           sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
-          await afterLogin();
-          return;
         }
       } catch(e) { console.warn('사용자 정보 조회 실패', e); }
-      showPage('phone');
+      await afterLogin();
     }
 
     // 관리자 배정석 감지 — 있으면 adminReservedSeatIds/Info 설정 후 true 반환
@@ -794,11 +785,9 @@
         return;
       }
 
-      // 전화번호로 중복 예매 확인
-      if (currentUser.phone) {
-        const existing = await findBookingByPhone(currentUser.phone);
-        if (existing) { showExistingBooking(existing); return; }
-      }
+      // UID로 기존 예매 확인
+      const existing = await findBookingByPhone(currentUser.phone);
+      if (existing) { showExistingBooking(existing); return; }
 
       if (isBookingClosed()) { showPage('bookingClosed'); return; }
       showPage('seat');

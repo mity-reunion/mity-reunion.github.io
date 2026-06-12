@@ -201,7 +201,8 @@
 
 <script>
   // ── 상수 ──
-  const ADMIN_LOGIN_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/adminLogin';
+  const ADMIN_LOGIN_URL    = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/adminLogin';
+  const ASSIGN_ADMIN_SEAT_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/assignAdminSeat';
 
   // ── HTML 이스케이프 (XSS 방지) ──
   function esc(s) {
@@ -447,20 +448,28 @@
   }
 
   async function doBlock(id) {
-    const target    = (document.getElementById('targetInput')?.value || '').trim();
-    const email     = (document.getElementById('targetEmail')?.value || '').trim().toLowerCase();
-    const rawPhone  = (document.getElementById('targetPhone')?.value || '').trim();
-    const phone     = normalizeAdminPhone(rawPhone);
-    blockedSeats.add(id);
-    blockedInfo[id] = { target, by: currentAdmin };
-    if (email) blockedInfo[id].email = email;
-    if (phone) blockedInfo[id].phone = phone;
-    const { doc, setDoc } = window._fs;
-    await setDoc(doc(window._db, 'seats', 'adminBlocked'), {
-      list: [...blockedSeats], info: blockedInfo,
-    });
-    logHistory(id, 'blocked', { target, email, phone });
-    buildMaps(); updateStats(); selectSeat(id);
+    const target   = (document.getElementById('targetInput')?.value || '').trim();
+    const email    = (document.getElementById('targetEmail')?.value || '').trim().toLowerCase();
+    const rawPhone = (document.getElementById('targetPhone')?.value || '').trim();
+    const phone    = normalizeAdminPhone(rawPhone);
+    try {
+      const idToken = await window._adminAuth.currentUser.getIdToken();
+      const resp = await fetch(ASSIGN_ADMIN_SEAT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+        body: JSON.stringify({ seatId: id, target, by: currentAdmin, email, phone }),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      blockedSeats.add(id);
+      blockedInfo[id] = { target, by: currentAdmin };
+      if (email) blockedInfo[id].email = email;
+      if (phone) blockedInfo[id].phone = phone;
+      logHistory(id, 'blocked', { target, email, phone });
+      buildMaps(); updateStats(); selectSeat(id);
+    } catch(e) {
+      console.error('배정 실패', e);
+      alert('배정 중 오류가 발생했습니다.');
+    }
   }
 
   function normalizeAdminPhone(phone) {
