@@ -442,7 +442,8 @@
         <input class="input-target" id="targetEmail" type="email" placeholder="이메일 (선택 사항)" oninput="onAdminEmailInput(this)" />
         <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 4px;"></div>
         <input class="input-target" id="targetPhone" type="tel" placeholder="전화번호 (이메일 입력 시 필수)" oninput="onAdminPhoneInput(this)" />
-        <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 4px;"></div>
+        <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 2px;"></div>
+        <div style="font-size:0.72rem;color:var(--muted);margin:-2px 0 6px;">숫자만 입력하세요. 자동으로 형식이 완성됩니다.</div>
         <button class="btn-block" onclick="doBlock('${id}')">예약석으로 지정</button>`;
     }
     html += `<button class="btn-history" onclick="toggleHistory('${id}')">▾ 히스토리</button><div id="historyList"></div>`;
@@ -458,17 +459,25 @@
   }
 
   function onAdminPhoneInput(input) {
+    const prev = input.dataset.prevDigits || '';
     const d = input.value.replace(/\D/g, '').slice(0, 11);
-    let v;
+    const growing = d.length > prev.length;
+    input.dataset.prevDigits = d;
     if (!d) { input.value = ''; clearPhoneError(); return; }
+    const dash = (atLen) => growing && d.length === atLen ? '-' : '';
+    let v;
     if (d.startsWith('02')) {
-      if (d.length <= 2)       v = d;
-      else if (d.length <= 6)  v = d.slice(0,2) + '-' + d.slice(2);
-      else if (d.length <= 9)  v = d.slice(0,2) + '-' + d.slice(2,5) + '-' + d.slice(5);
-      else                     v = d.slice(0,2) + '-' + d.slice(2,6) + '-' + d.slice(6);
+      if (d.length <= 2)      v = d + dash(2);
+      else if (d.length <= 6) v = '02-' + d.slice(2);
+      else if (d.length <= 9) v = '02-' + d.slice(2,5) + '-' + d.slice(5);
+      else                    v = '02-' + d.slice(2,6) + '-' + d.slice(6);
+    } else if (d.startsWith('010')) {
+      if (d.length <= 3)      v = d + dash(3);
+      else if (d.length <= 7) v = '010-' + d.slice(3);
+      else                    v = '010-' + d.slice(3,7) + '-' + d.slice(7);
     } else {
-      if (d.length <= 3)       v = d;
-      else if (d.length <= 7)  v = d.slice(0,3) + '-' + d.slice(3);
+      if (d.length <= 3)       v = d + dash(3);
+      else if (d.length <= 6)  v = d.slice(0,3) + '-' + d.slice(3);
       else if (d.length <= 10) v = d.slice(0,3) + '-' + d.slice(3,6) + '-' + d.slice(6);
       else                     v = d.slice(0,3) + '-' + d.slice(3,7) + '-' + d.slice(7);
     }
