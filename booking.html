@@ -504,7 +504,7 @@
         </div>
       </div>
       <div class="done-actions">
-        <button class="btn-seat-view" onclick="goToFullAuth()">좌석 변경</button>
+        <button class="btn-seat-view" onclick="goToSeatChangeAuth()">좌석 변경</button>
         <button class="btn-cancel-red" onclick="goToFullAuth()">취소하기</button>
       </div>
       <p style="font-size:0.7rem;color:rgba(255,255,255,0.35);text-align:center;margin-top:-4px;">이메일 인증 후 변경/취소 가능합니다</p>
@@ -543,8 +543,9 @@
     const selected  = new Set();
 
     // 관리자 배정석 상태
-    let adminReservedSeatIds = [];  // 배정된 좌석 ID 배열
-    let adminReservedInfo    = null; // { target, email, phone, by }
+    let adminReservedSeatIds    = [];    // 배정된 좌석 ID 배열
+    let adminReservedInfo       = null;  // { target, email, phone, by }
+    let pendingAdminSeatChange  = false; // 인증 후 바로 좌석 변경 화면으로 이동
 
     function formatSeatLabel(id) {
       if (!id) return '—';
@@ -801,7 +802,7 @@
     }
 
     // ── 관리자 배정석 완료 화면 ──
-    function showAdminReservedBooking() {
+    async function showAdminReservedBooking() {
       if (currentUser) {
         document.getElementById('navUser').textContent = currentUser.email;
         document.getElementById('btnLogout').style.display = '';
@@ -819,6 +820,13 @@
       const closed = isBookingClosed();
       document.getElementById('btnCancelBooking').style.display = closed ? 'none' : '';
       document.querySelector('.btn-seat-view').style.display    = closed ? 'none' : '';
+
+      // 예매확인 → 좌석 변경 경로: 인증 직후 좌석 선택 화면으로 바로 이동
+      if (pendingAdminSeatChange && !closed) {
+        pendingAdminSeatChange = false;
+        await showSeatView();
+        return;
+      }
       showPage('done');
     }
 
@@ -1182,6 +1190,11 @@
       showPage('email');
     }
 
+    function goToSeatChangeAuth() {
+      pendingAdminSeatChange = true;
+      goToFullAuth();
+    }
+
     function openPhoneEditModal() {
       document.getElementById('phoneEditInput').value = currentUser.phone ? formatPhone(currentUser.phone) : '';
       document.getElementById('phoneEditModal').classList.add('open');
@@ -1221,8 +1234,9 @@
       if (window._auth && window._authLib) window._authLib.signOut(window._auth).catch(() => {});
       currentUser = null;
       selected.clear();
-      adminReservedSeatIds = [];
-      adminReservedInfo    = null;
+      adminReservedSeatIds   = [];
+      adminReservedInfo      = null;
+      pendingAdminSeatChange = false;
       const phoneEditBtn = document.querySelector('.btn-phone-edit');
       if (phoneEditBtn) phoneEditBtn.style.display = '';
       document.getElementById('navUser').textContent = '';
