@@ -439,19 +439,65 @@
       html += `
         <div style="font-size:0.8rem;color:var(--muted);margin:6px 0 10px;">선택 가능한 좌석</div>
         <input class="input-target" id="targetInput" placeholder="대상자 이름 (선택 사항)" />
-        <input class="input-target" id="targetEmail" type="email" placeholder="이메일 (선택 사항)" />
-        <input class="input-target" id="targetPhone" type="tel" placeholder="전화번호 (선택 사항)" />
+        <input class="input-target" id="targetEmail" type="email" placeholder="이메일 (선택 사항)" oninput="onAdminEmailInput(this)" />
+        <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 4px;"></div>
+        <input class="input-target" id="targetPhone" type="tel" placeholder="전화번호 (이메일 입력 시 필수)" oninput="onAdminPhoneInput(this)" />
+        <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 4px;"></div>
         <button class="btn-block" onclick="doBlock('${id}')">예약석으로 지정</button>`;
     }
     html += `<button class="btn-history" onclick="toggleHistory('${id}')">▾ 히스토리</button><div id="historyList"></div>`;
     panel.innerHTML = html;
   }
 
+  function onAdminEmailInput(input) {
+    const v = input.value.trim();
+    const err = document.getElementById('emailError');
+    if (!err) return;
+    if (!v) { err.textContent = ''; return; }
+    err.textContent = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : '올바른 이메일 형식이 아닙니다.';
+  }
+
+  function onAdminPhoneInput(input) {
+    const d = input.value.replace(/\D/g, '').slice(0, 11);
+    let v;
+    if (!d) { input.value = ''; clearPhoneError(); return; }
+    if (d.startsWith('02')) {
+      if (d.length <= 2)       v = d;
+      else if (d.length <= 6)  v = d.slice(0,2) + '-' + d.slice(2);
+      else if (d.length <= 9)  v = d.slice(0,2) + '-' + d.slice(2,5) + '-' + d.slice(5);
+      else                     v = d.slice(0,2) + '-' + d.slice(2,6) + '-' + d.slice(6);
+    } else {
+      if (d.length <= 3)       v = d;
+      else if (d.length <= 7)  v = d.slice(0,3) + '-' + d.slice(3);
+      else if (d.length <= 10) v = d.slice(0,3) + '-' + d.slice(3,6) + '-' + d.slice(6);
+      else                     v = d.slice(0,3) + '-' + d.slice(3,7) + '-' + d.slice(7);
+    }
+    input.value = v;
+    const err = document.getElementById('phoneError');
+    if (err) err.textContent = (d.length >= 9) ? '' : '올바른 전화번호 형식이 아닙니다.';
+  }
+
+  function clearPhoneError() {
+    const err = document.getElementById('phoneError');
+    if (err) err.textContent = '';
+  }
+
   async function doBlock(id) {
     const target   = (document.getElementById('targetInput')?.value || '').trim();
-    const email    = (document.getElementById('targetEmail')?.value || '').trim().toLowerCase();
+    const emailRaw = (document.getElementById('targetEmail')?.value || '').trim();
+    const email    = emailRaw.toLowerCase();
     const rawPhone = (document.getElementById('targetPhone')?.value || '').trim();
     const phone    = normalizeAdminPhone(rawPhone);
+
+    if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
+      alert('올바른 이메일 형식이 아닙니다.'); return;
+    }
+    if (email && !phone) {
+      alert('이메일을 입력한 경우 전화번호도 입력해주세요.'); return;
+    }
+    if (rawPhone && phone.replace(/\D/g,'').length < 9) {
+      alert('올바른 전화번호 형식이 아닙니다.'); return;
+    }
     try {
       const idToken = await window._adminAuth.currentUser.getIdToken();
       const resp = await fetch(ASSIGN_ADMIN_SEAT_URL, {
