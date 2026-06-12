@@ -353,6 +353,107 @@ functions.http('createBooking', async (req, res) => {
   }
 });
 
+// ── 관리자 배정석 취소 (본인 이메일 인증 필요) ──
+functions.http('cancelAdminSeat', async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
+
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) { res.status(401).json({ error: 'Authentication required' }); return; }
+
+  let decodedToken;
+  try {
+    decodedToken = await admin.auth().verifyIdToken(authHeader.slice(7));
+  } catch(e) { res.status(401).json({ error: 'Invalid or expired token' }); return; }
+
+  const email = (decodedToken.email || '').toLowerCase();
+  if (!email) { res.status(400).json({ error: 'No email in token' }); return; }
+
+  const db = admin.firestore();
+  try {
+    const blkRef = db.collection('seats').doc('adminBlocked');
+    const blkSnap = await blkRef.get();
+    if (!blkSnap.exists) { res.status(404).json({ error: 'no_reserved_seat' }); return; }
+
+    const data = blkSnap.data();
+    const list = data.list || [];
+    const info = data.info || {};
+
+    const seatIds = Object.keys(info).filter(k => (info[k].email || '').toLowerCase() === email);
+    if (seatIds.length === 0) { res.status(404).json({ error: 'no_reserved_seat' }); return; }
+
+    const newList = list.filter(s => !seatIds.includes(s));
+    const newInfo = { ...info };
+    seatIds.forEach(s => delete newInfo[s]);
+
+    await blkRef.set({ list: newList, info: newInfo });
+    res.json({ success: true });
+  } catch(e) {
+    console.error('cancelAdminSeat error', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── 관리자 배정석 변경 (본인 이메일 인증 필요) ──
+functions.http('changeAdminSeat', async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
+
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) { res.status(401).json({ error: 'Authentication required' }); return; }
+
+  let decodedToken;
+  try {
+    decodedToken = await admin.auth().verifyIdToken(authHeader.slice(7));
+  } catch(e) { res.status(401).json({ error: 'Invalid or expired token' }); return; }
+
+  const email = (decodedToken.email || '').toLowerCase();
+  if (!email) { res.status(400).json({ error: 'No email in token' }); return; }
+
+  const { newSeats } = req.body;
+  if (!Array.isArray(newSeats) || newSeats.length === 0 || newSeats.length > MAX_SEATS) {
+    res.status(400).json({ error: `newSeats must be 1–${MAX_SEATS} items` }); return;
+  }
+  if (!newSeats.every(s => typeof s === 'string' && VALID_SEAT_RE.test(s))) {
+    res.status(400).json({ error: 'Invalid seat ID format' }); return;
+  }
+
+  const db = admin.firestore();
+  try {
+    const blkRef = db.collection('seats').doc('adminBlocked');
+    const resRef = db.collection('seats').doc('reserved');
+    const [blkSnap, resSnap] = await Promise.all([blkRef.get(), resRef.get()]);
+
+    if (!blkSnap.exists) { res.status(404).json({ error: 'no_reserved_seat' }); return; }
+
+    const blkData = blkSnap.data();
+    const blkList = blkData.list || [];
+    const blkInfo = blkData.info || {};
+    const resList = resSnap.exists ? (resSnap.data().list || []) : [];
+
+    const oldSeatIds = Object.keys(blkInfo).filter(k => (blkInfo[k].email || '').toLowerCase() === email);
+    if (oldSeatIds.length === 0) { res.status(404).json({ error: 'no_reserved_seat' }); return; }
+
+    const blkWithoutOld = blkList.filter(s => !oldSeatIds.includes(s));
+    const conflict = newSeats.find(s => resList.includes(s) || blkWithoutOld.includes(s));
+    if (conflict) { res.status(409).json({ error: 'seat_taken' }); return; }
+
+    const sharedInfo = blkInfo[oldSeatIds[0]];
+    const newBlkList = [...new Set([...blkWithoutOld, ...newSeats])];
+    const newBlkInfo = { ...blkInfo };
+    oldSeatIds.forEach(s => delete newBlkInfo[s]);
+    newSeats.forEach(s => { newBlkInfo[s] = { ...sharedInfo }; });
+
+    await blkRef.set({ list: newBlkList, info: newBlkInfo });
+    res.json({ success: true, newSeats, newSeatId: newSeats[0], info: sharedInfo });
+  } catch(e) {
+    console.error('changeAdminSeat error', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ── 예매 확인 (비인증 — 이메일 + 전화번호 뒷 4자리) ──
 functions.http('checkBooking', async (req, res) => {
   setCors(res);

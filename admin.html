@@ -417,8 +417,12 @@
     } else if (isBlocked) {
       const target    = blockedInfo[id]?.target || '';
       const blockedBy = blockedInfo[id]?.by || '';
+      const bEmail    = blockedInfo[id]?.email || '';
+      const bPhone    = blockedInfo[id]?.phone || '';
       html += `<div style="font-size:0.8rem;color:#f97316;margin:6px 0 10px;">예약 좌석</div>`;
       if (target)    html += `<div class="info-row"><span class="info-key">대상자</span><span class="info-val">${esc(target)}</span></div>`;
+      if (bEmail)    html += `<div class="info-row"><span class="info-key">이메일</span><span class="info-val">${esc(bEmail)}</span></div>`;
+      if (bPhone)    html += `<div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(bPhone)}</span></div>`;
       if (blockedBy) html += `<div class="info-row"><span class="info-key">예약 처리</span><span class="info-val">${esc(blockedBy)}</span></div>`;
       html += `
         <label class="checkin-row">
@@ -434,6 +438,8 @@
       html += `
         <div style="font-size:0.8rem;color:var(--muted);margin:6px 0 10px;">선택 가능한 좌석</div>
         <input class="input-target" id="targetInput" placeholder="대상자 이름 (선택 사항)" />
+        <input class="input-target" id="targetEmail" type="email" placeholder="이메일 (선택 사항)" />
+        <input class="input-target" id="targetPhone" type="tel" placeholder="전화번호 (선택 사항)" />
         <button class="btn-block" onclick="doBlock('${id}')">예약석으로 지정</button>`;
     }
     html += `<button class="btn-history" onclick="toggleHistory('${id}')">▾ 히스토리</button><div id="historyList"></div>`;
@@ -441,15 +447,27 @@
   }
 
   async function doBlock(id) {
-    const target = (document.getElementById('targetInput')?.value || '').trim();
+    const target    = (document.getElementById('targetInput')?.value || '').trim();
+    const email     = (document.getElementById('targetEmail')?.value || '').trim().toLowerCase();
+    const rawPhone  = (document.getElementById('targetPhone')?.value || '').trim();
+    const phone     = normalizeAdminPhone(rawPhone);
     blockedSeats.add(id);
     blockedInfo[id] = { target, by: currentAdmin };
+    if (email) blockedInfo[id].email = email;
+    if (phone) blockedInfo[id].phone = phone;
     const { doc, setDoc } = window._fs;
     await setDoc(doc(window._db, 'seats', 'adminBlocked'), {
       list: [...blockedSeats], info: blockedInfo,
     });
-    logHistory(id, 'blocked', { target });
+    logHistory(id, 'blocked', { target, email, phone });
     buildMaps(); updateStats(); selectSeat(id);
+  }
+
+  function normalizeAdminPhone(phone) {
+    if (!phone) return '';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('82') && digits.length >= 11) return '0' + digits.slice(2);
+    return digits;
   }
 
   async function doUnblock(id) {
