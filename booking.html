@@ -354,7 +354,8 @@
         <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
         <p class="auth-sub" style="margin-top:-24px;margin-bottom:24px;font-size:0.78rem;">예매를 진행할 이메일을 입력 후 인증을 진행해주세요.</p>
         <input type="email" id="emailInput" class="input-field" placeholder="이메일 주소 입력"
-          onkeydown="if(event.key==='Enter') sendEmailLink()" />
+          oninput="onBookingEmailInput(this)" onkeydown="if(event.key==='Enter') sendEmailLink()" />
+        <div id="emailInputError" style="font-size:0.78rem;color:#e55;min-height:1em;margin:-10px 0 6px;text-align:left;"></div>
         <button class="btn-primary" onclick="sendEmailLink()">인증 메일 보내기</button>
       </div>
 
@@ -364,7 +365,7 @@
         <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
         <p class="auth-sub" style="margin-top:-24px;margin-bottom:24px;font-size:0.78rem;">예매시 사용한 이메일과 전화번호 뒷 4자리를 입력해주세요.</p>
         <input type="email" id="checkEmailInput" class="input-field" placeholder="이메일 주소"
-          onkeydown="if(event.key==='Enter') document.getElementById('checkPhoneInput').focus()" />
+          oninput="onBookingEmailInput(this)" onkeydown="if(event.key==='Enter') document.getElementById('checkPhoneInput').focus()" />
         <input type="tel" id="checkPhoneInput" class="input-field" placeholder="전화번호 뒷 4자리 (선택 사항)" maxlength="4" inputmode="numeric"
           onkeydown="if(event.key==='Enter') lookupBooking()" />
         <button class="btn-primary" onclick="lookupBooking()">예매 확인</button>
@@ -398,7 +399,7 @@
       <h1 class="auth-title">전화번호 입력</h1>
       <p class="auth-sub">공연 당일 입장 확인에 사용됩니다</p>
       <input type="tel" id="phoneInput" class="input-field" placeholder="010-0000-0000"
-        onkeydown="if(event.key==='Enter') submitPhone()" />
+        oninput="autoFormatPhone(this)" onkeydown="if(event.key==='Enter') submitPhone()" />
       <button class="btn-primary" onclick="submitPhone()">다음</button>
       <div class="privacy-notice">
         전화번호는 공연 당일 예매 확인 용도로만 사용되며,<br>
@@ -478,7 +479,7 @@
       <p class="modal-desc">변경할 전화번호를 입력해 주세요.</p>
       <input type="tel" id="phoneEditInput" class="input-field" placeholder="010-0000-0000"
         style="margin-top:8px;"
-        onkeydown="if(event.key==='Enter') confirmPhoneEdit()" />
+        oninput="autoFormatPhone(this)" onkeydown="if(event.key==='Enter') confirmPhoneEdit()" />
       <div class="modal-actions">
         <button class="btn-modal-cancel" onclick="closePhoneEditModal()">취소</button>
         <button class="btn-modal-save" id="btnConfirmPhoneEdit" onclick="confirmPhoneEdit()">저장</button>
@@ -1088,6 +1089,32 @@
     }
 
     // ── 전화번호 정규화 (+82 10-xxxx-xxxx → 01012345678) ──
+    function onBookingEmailInput(input) {
+      const v = input.value.trim();
+      const err = document.getElementById('emailInputError');
+      if (!err) return;
+      if (!v) { err.textContent = ''; return; }
+      err.textContent = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : '올바른 이메일 형식이 아닙니다.';
+    }
+
+    function autoFormatPhone(input) {
+      const d = input.value.replace(/\D/g, '').slice(0, 11);
+      if (!d) { input.value = ''; return; }
+      let v;
+      if (d.startsWith('02')) {
+        if (d.length <= 2)       v = d;
+        else if (d.length <= 6)  v = d.slice(0,2) + '-' + d.slice(2);
+        else if (d.length <= 9)  v = d.slice(0,2) + '-' + d.slice(2,5) + '-' + d.slice(5);
+        else                     v = d.slice(0,2) + '-' + d.slice(2,6) + '-' + d.slice(6);
+      } else {
+        if (d.length <= 3)       v = d;
+        else if (d.length <= 7)  v = d.slice(0,3) + '-' + d.slice(3);
+        else if (d.length <= 10) v = d.slice(0,3) + '-' + d.slice(3,6) + '-' + d.slice(6);
+        else                     v = d.slice(0,3) + '-' + d.slice(3,7) + '-' + d.slice(7);
+      }
+      input.value = v;
+    }
+
     function normalizePhone(phone) {
       if (!phone) return '';
       const digits = phone.replace(/\D/g, '');
