@@ -684,6 +684,9 @@
               const closed = isBookingClosed();
               document.getElementById('btnCheckDoneSeatView').style.display = closed ? 'none' : '';
               document.getElementById('btnCheckDoneCancel').style.display   = closed ? 'none' : '';
+              if (!closed && sessionStorage.getItem('seat_change_session')) {
+                await showSeatView(); return;
+              }
               showPage('checkDone');
               return;
             } catch(e) {
@@ -873,8 +876,7 @@
       document.getElementById('btnCancelBooking').style.display = closed ? 'none' : '';
       document.querySelector('.btn-seat-view').style.display    = closed ? 'none' : '';
 
-      // 예매확인 → 좌석 변경 경로: 인증 직후 좌석 선택 화면으로 바로 이동
-      if (pendingAdminSeatChange && !closed) {
+      if (!closed && (pendingAdminSeatChange || sessionStorage.getItem('seat_change_session'))) {
         pendingAdminSeatChange = false;
         await showSeatView();
         return;
@@ -899,7 +901,7 @@
     }
 
     // ── 이미 예매된 경우 완료 화면 표시 ──
-    function showExistingBooking(booking) {
+    async function showExistingBooking(booking) {
       document.getElementById('btnLogout').style.display = '';
       document.getElementById('btnLogoutMobile').style.display = '';
       const phoneEditBtn = document.querySelector('#pageDone .btn-phone-edit');
@@ -912,6 +914,9 @@
       const closed = isBookingClosed();
       document.getElementById('btnCancelBooking').style.display = closed ? 'none' : '';
       document.querySelector('.btn-seat-view').style.display = closed ? 'none' : '';
+      if (!closed && sessionStorage.getItem('seat_change_session')) {
+        await showSeatView(); return;
+      }
       showPage('done');
     }
 
@@ -1008,6 +1013,7 @@
     // ── 좌석현황 보기 (뷰 전용) ──
     async function showSeatView() {
       if (isBookingClosed()) { showToast('예매가 마감되어 좌석 변경이 불가합니다.'); return; }
+      sessionStorage.setItem('seat_change_session', '1');
       changeMode = true; viewOnly = false;
       await loadReserved();
       selected.clear();
@@ -1097,6 +1103,7 @@
           adminReservedInfo    = data.info || adminReservedInfo;
           selected.clear();
           resetSeatPageUI();
+          sessionStorage.removeItem('seat_change_session');
           if (adminSeatAuthMode === 'direct') {
             document.getElementById('checkDoneSeats').textContent =
               adminReservedSeatIds.map(formatSeatLabel).join(', ');
@@ -1140,6 +1147,7 @@
         currentBookingSeats = data.seats;
         selected.clear();
         resetSeatPageUI();
+        sessionStorage.removeItem('seat_change_session');
         if (adminSeatAuthMode === 'direct') {
           document.getElementById('checkDoneSeats').textContent =
             data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
@@ -1159,6 +1167,7 @@
     }
 
     function cancelChange() {
+      sessionStorage.removeItem('seat_change_session');
       selected.clear();
       resetSeatPageUI();
       if (adminSeatAuthMode === 'direct') {
@@ -1394,6 +1403,7 @@
       sessionStorage.removeItem('booking_user');
       sessionStorage.removeItem('emailForSignIn');
       sessionStorage.removeItem('check_session');
+      sessionStorage.removeItem('seat_change_session');
       if (window._auth && window._authLib) window._authLib.signOut(window._auth).catch(() => {});
       currentUser = null;
       selected.clear();
