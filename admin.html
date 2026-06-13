@@ -115,6 +115,8 @@
     .info-row { display: flex; flex-direction: column; gap: 3px; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .info-key { font-size: 0.65rem; letter-spacing: 0.15em; color: var(--muted); }
     .info-val { font-size: 0.85rem; word-break: break-all; }
+    .btn-edit-sm { padding: 4px 10px; background: rgba(255,255,255,0.07); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .btn-edit-sm:hover { background: rgba(255,255,255,0.14); color: #fff; }
     .btn-block   { width: 100%; padding: 11px; background: rgba(251,146,60,0.2); color: #f97316; border: 1px solid #f97316; border-radius: 4px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
     .btn-block:hover { background: rgba(251,146,60,0.35); }
     .btn-unblock { width: 100%; padding: 11px; background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
@@ -423,13 +425,13 @@
       const blockedBy = blockedInfo[id]?.by || '';
       const bEmail    = blockedInfo[id]?.email || '';
       const bPhone    = blockedInfo[id]?.phone || '';
-      html += `<div style="font-size:0.8rem;color:#f97316;margin:6px 0 10px;">예약 좌석</div>`;
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0 10px;"><span style="font-size:0.8rem;color:#f97316;">예약 좌석</span><button class="btn-edit-sm" onclick="toggleEditForm()">수정</button></div>`;
       if (target)    html += `<div class="info-row"><span class="info-key">메모</span><span class="info-val">${esc(target)}</span></div>`;
       if (bEmail)    html += `<div class="info-row"><span class="info-key">이메일</span><span class="info-val">${esc(bEmail)}</span></div>`;
       if (bPhone)    html += `<div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(bPhone)}</span></div>`;
       if (blockedBy) html += `<div class="info-row"><span class="info-key">예약 처리</span><span class="info-val">${esc(blockedBy)}</span></div>`;
       html += `
-        <div style="margin:12px 0 6px;font-size:0.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">정보 수정</div>
+        <div id="editForm" style="display:none;border-top:1px solid var(--border);padding-top:10px;margin-top:12px;">
         <input class="input-target" id="targetEmail" type="email" value="${esc(bEmail)}" placeholder="이메일 (선택 사항)" oninput="onAdminEmailInput(this)" />
         <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:0.9em;margin:-6px 0 2px;"></div>
         <input class="input-target" id="targetPhone" type="tel" value="${esc(bPhone ? fmtPhone(bPhone) : '')}" placeholder="전화번호" oninput="onAdminPhoneInput(this)" />
@@ -437,6 +439,7 @@
         <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin-bottom:8px;"></div>
         <input class="input-target" id="targetInput" value="${esc(target)}" placeholder="메모 (선택 사항)" />
         <button class="btn-block" onclick="doBlock('${esc(id)}')">수정 완료</button>
+        </div>
         <label class="checkin-row" style="margin-top:12px;">
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${esc(id)}', this.checked)"/>
           <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${esc(checkinBy)})</span>` : ''}</span>
@@ -498,6 +501,16 @@
   function clearPhoneError() {
     const err = document.getElementById('phoneError');
     if (err) err.textContent = '';
+  }
+
+  function toggleEditForm() {
+    const form = document.getElementById('editForm');
+    if (!form) return;
+    const opening = form.style.display === 'none';
+    form.style.display = opening ? '' : 'none';
+    const btn = form.closest('.seat-detail, #seatDetail')?.querySelector('.btn-edit-sm') ||
+                document.querySelector('.btn-edit-sm');
+    if (btn) btn.textContent = opening ? '닫기' : '수정';
   }
 
   async function doBlock(id) {
