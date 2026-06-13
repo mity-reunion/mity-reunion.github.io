@@ -955,7 +955,7 @@
           showToast('예약이 취소되었습니다.');
           if (adminSeatAuthMode === 'direct') {
             sessionStorage.removeItem('check_session');
-            showPage('email');
+            setAuthMode('book'); showPage('email');
           } else {
             const _closed = isBookingClosed();
             selected.clear();
@@ -998,7 +998,7 @@
           sessionStorage.removeItem('check_session');
           adminCheckEmail = ''; adminCheckSuffix = ''; adminCheckPhone = '';
           adminSeatAuthMode = 'token';
-          showPage('email');
+          setAuthMode('book'); showPage('email');
         } else {
           document.getElementById('btnCancelBooking').style.display = 'none';
           selected.clear();
