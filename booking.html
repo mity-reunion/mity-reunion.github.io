@@ -138,10 +138,12 @@
       width: 26px; height: 22px; border-radius: 3px;
       border: 1px solid rgba(255,255,255,0.35);
       background: rgba(255,255,255,0.14);
-      cursor: pointer; transition: background 0.1s, transform 0.1s; font-size: 0;
+      cursor: pointer; transition: background 0.1s, transform 0.1s;
+      font-size: 0.45rem; color: rgba(255,255,255,0.65); font-weight: 700;
+      display: flex; align-items: center; justify-content: center; line-height: 1;
     }
     .seat:hover:not(.reserved):not(.wc-seat):not(.selected) { background: rgba(255,255,255,0.3); transform: scale(1.1); }
-    .seat.selected  { background: #ffffff !important; border-color: #ffffff !important; }
+    .seat.selected  { background: #ffffff !important; border-color: #ffffff !important; color: #111 !important; }
     /* 예매 완료: X 표시 */
     .seat.reserved  {
       background: transparent; border-color: rgba(255,255,255,0.25); cursor: not-allowed;
@@ -1495,7 +1497,7 @@
       const btn = document.createElement('button');
       btn.className = 'seat' + (isWC ? ' wc-seat' : '') + (reserved.has(id) ? ' reserved' : '') + (selected.has(id) ? ' selected' : '');
       btn.dataset.id = id; btn.title = label;
-      if (displayText) btn.textContent = displayText;
+      btn.textContent = displayText || (id.includes('WC') ? id.replace(/\D/g,'') : id.split('-')[1]);
       if (!reserved.has(id) && !viewOnly) btn.onclick = () => toggleSeat(id, btn);
       rowEl.appendChild(btn);
     }
