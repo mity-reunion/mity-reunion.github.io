@@ -175,7 +175,7 @@
   <div class="dashboard-body">
     <div class="seat-area">
       <div class="search-wrap">
-        <input class="search-input" id="searchInput" placeholder="전화번호 뒷 4자리 또는 이메일로 검색"
+        <input class="search-input" id="searchInput" placeholder="전화번호 뒷 4자리로 검색"
           onkeydown="if(event.key==='Enter') doSearch()" />
         <button class="btn-search" onclick="doSearch()">검색</button>
         <button class="btn-search" onclick="clearSearch()" style="background:none;border-color:transparent;color:var(--muted)">✕</button>
@@ -680,13 +680,16 @@
     clearSearchHighlight();
     if (!q) return;
 
-    const isPhone4 = /^\d{4}$/.test(q);
     const matched = new Set();
 
+    // 일반 예매 좌석
     Object.entries(bookingMap).forEach(([seatId, b]) => {
-      const phoneMatch = isPhone4 && b.phone && b.phone.slice(-4) === q;
-      const emailMatch = !isPhone4 && b.email && b.email.toLowerCase().includes(q.toLowerCase());
-      if (phoneMatch || emailMatch) matched.add(seatId);
+      if (b.phone && b.phone.slice(-4) === q) matched.add(seatId);
+    });
+
+    // 관리자 예약석
+    Object.entries(blockedInfo).forEach(([seatId, b]) => {
+      if (b.phone && b.phone.slice(-4) === q) matched.add(seatId);
     });
 
     if (matched.size === 0) {
