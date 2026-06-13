@@ -945,27 +945,10 @@
           const res = await fetch(CANCEL_ADMIN_SEAT_URL, { method: 'POST', headers, body: JSON.stringify(body) });
           if (!res.ok) { showToast('취소 처리 중 오류가 발생했습니다.'); closeCancelModal(); btn.disabled = false; btn.textContent = '취소 확정'; return; }
           closeCancelModal();
-          adminReservedSeatIds = [];
-          adminReservedInfo    = null;
-          adminCheckEmail      = '';
-          adminCheckSuffix     = '';
-          adminCheckPhone      = '';
-          const phoneEditBtn = document.querySelector('.btn-phone-edit');
-          if (phoneEditBtn) phoneEditBtn.style.display = '';
+          sessionStorage.removeItem('check_session');
+          sessionStorage.removeItem('seat_change_session');
           showToast('예약이 취소되었습니다.');
-          if (adminSeatAuthMode === 'direct') {
-            sessionStorage.removeItem('check_session');
-            setAuthMode('book'); showPage('email');
-          } else {
-            const _closed = isBookingClosed();
-            selected.clear();
-            showPage(_closed ? 'bookingClosed' : 'seat');
-            reserved.clear();
-            await loadReserved();
-            seatsBuilt = false;
-            if (!_closed) buildSeats();
-          }
-          adminSeatAuthMode = 'token';
+          setTimeout(() => { location.href = '/'; }, 1500);
         } catch(e) {
           console.error('관리자 배정석 취소 오류', e);
           showToast('취소 처리 중 오류가 발생했습니다.');
@@ -990,24 +973,10 @@
         if (!res.ok) { showToast('취소 처리 중 오류가 발생했습니다.'); return; }
 
         closeCancelModal();
-        currentBookingRef = null;
-        currentBookingSeats = [];
+        sessionStorage.removeItem('check_session');
+        sessionStorage.removeItem('seat_change_session');
         showToast('예매가 취소되었습니다.');
-
-        if (adminSeatAuthMode === 'direct') {
-          sessionStorage.removeItem('check_session');
-          adminCheckEmail = ''; adminCheckSuffix = ''; adminCheckPhone = '';
-          adminSeatAuthMode = 'token';
-          setAuthMode('book'); showPage('email');
-        } else {
-          document.getElementById('btnCancelBooking').style.display = 'none';
-          selected.clear();
-          showPage('seat');
-          reserved.clear();
-          await loadReserved();
-          seatsBuilt = false;
-          buildSeats();
-        }
+        setTimeout(() => { location.href = '/'; }, 1500);
       } catch(e) {
         console.error('취소 오류', e);
         showToast('취소 처리 중 오류가 발생했습니다.');
