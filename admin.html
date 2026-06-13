@@ -674,6 +674,7 @@
         ${e.email || e.phone ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.3)">${[e.email ? esc(e.email) : '', e.phone ? fmtPhone(e.phone) : ''].filter(Boolean).join(' · ')}</div>` : ''}
         ${e.target ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.25)">메모: ${esc(e.target)}</div>` : ''}
         ${e.newSeats?.length ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.25)">변경 → ${e.newSeats.map(s => seatLabel(s)).join(', ')}</div>` : ''}
+        ${e.oldSeats?.length ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.25)">변경 전 ${e.oldSeats.map(s => seatLabel(s)).join(', ')}</div>` : ''}
       </div>`).join('');
 
   }

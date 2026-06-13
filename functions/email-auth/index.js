@@ -518,7 +518,7 @@ functions.http('changeAdminSeat', async (req, res) => {
     };
     await Promise.all([
       ...oldSeatIds.map(s => logSeatHistory(db, s, 'user_changed', { by: email, ...histExtra, newSeats })),
-      ...newSeats.map(s  => logSeatHistory(db, s, 'blocked',      { by: email, ...histExtra })),
+      ...newSeats.map(s  => logSeatHistory(db, s, 'user_changed', { by: email, ...histExtra, oldSeats: oldSeatIds })),
     ]);
     res.json({ success: true, newSeats, newSeatId: newSeats[0], info: sharedInfo });
   } catch(e) {
