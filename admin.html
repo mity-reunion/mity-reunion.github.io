@@ -538,11 +538,11 @@
         body: JSON.stringify({ seatId: id, target, by: currentAdmin, email, phone }),
       });
       if (!resp.ok) throw new Error(await resp.text());
+      const action = blockedSeats.has(id) ? 'updated' : 'blocked';
       blockedSeats.add(id);
       blockedInfo[id] = { target, by: currentAdmin };
       if (email) blockedInfo[id].email = email;
       if (phone) blockedInfo[id].phone = phone;
-      const action = blockedSeats.has(id) ? 'updated' : 'blocked';
       logHistory(id, action, { target, email, phone });
       buildMaps(); updateStats(); selectSeat(id);
     } catch(e) {
@@ -731,7 +731,9 @@
   }
   function fmtDate(iso) {
     if (!iso) return '-';
-    return iso.slice(0,16).replace('T',' ');
+    const d = new Date(new Date(iso).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+    const pad = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 </script>
 </body>
