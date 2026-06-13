@@ -424,7 +424,7 @@
       const bEmail    = blockedInfo[id]?.email || '';
       const bPhone    = blockedInfo[id]?.phone || '';
       html += `<div style="font-size:0.8rem;color:#f97316;margin:6px 0 10px;">예약 좌석</div>`;
-      if (target)    html += `<div class="info-row"><span class="info-key">대상자</span><span class="info-val">${esc(target)}</span></div>`;
+      if (target)    html += `<div class="info-row"><span class="info-key">메모</span><span class="info-val">${esc(target)}</span></div>`;
       if (bEmail)    html += `<div class="info-row"><span class="info-key">이메일</span><span class="info-val">${esc(bEmail)}</span></div>`;
       if (bPhone)    html += `<div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(bPhone)}</span></div>`;
       if (blockedBy) html += `<div class="info-row"><span class="info-key">예약 처리</span><span class="info-val">${esc(blockedBy)}</span></div>`;
@@ -441,13 +441,19 @@
     } else {
       html += `
         <div style="font-size:0.8rem;color:var(--muted);margin:6px 0 10px;">선택 가능한 좌석</div>
-        <input class="input-target" id="targetInput" placeholder="대상자 이름 (선택 사항)" />
-        <input class="input-target" id="targetEmail" type="email" placeholder="이메일 (선택 사항)" oninput="onAdminEmailInput(this)" />
-        <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 4px;"></div>
-        <input class="input-target" id="targetPhone" type="tel" placeholder="전화번호 (이메일 입력 시 필수)" oninput="onAdminPhoneInput(this)" />
-        <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 2px;"></div>
-        <div style="font-size:0.72rem;color:var(--muted);margin:-2px 0 6px;">숫자만 입력하세요. 자동으로 형식이 완성됩니다.</div>
-        <button class="btn-block" onclick="doBlock('${id}')">예약석으로 지정</button>`;
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="flex:1;min-width:0;">
+            <input class="input-target" id="targetEmail" type="email" placeholder="이메일 (선택 사항)" oninput="onAdminEmailInput(this)" style="margin-bottom:4px;" />
+            <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:1em;margin-bottom:4px;"></div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <input class="input-target" id="targetPhone" type="tel" placeholder="전화번호 (이메일 입력 시 필수)" oninput="onAdminPhoneInput(this)" style="margin-bottom:2px;" />
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px;">숫자만 입력하세요. 자동으로 형식이 완성됩니다.</div>
+            <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin-bottom:4px;"></div>
+          </div>
+        </div>
+        <button class="btn-block" onclick="doBlock('${id}')">예약석으로 지정</button>
+        <input class="input-target" id="targetInput" placeholder="메모 (선택 사항)" style="margin-top:8px;" />`;
     }
     html += `<button class="btn-history" onclick="toggleHistory('${id}')">▾ 히스토리</button><div id="historyList"></div>`;
     panel.innerHTML = html;
