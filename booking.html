@@ -366,7 +366,7 @@
         <p class="auth-sub" style="margin-top:-24px;margin-bottom:24px;font-size:0.78rem;">예매시 사용한 이메일과 전화번호 뒷 4자리를 입력해주세요.</p>
         <input type="email" id="checkEmailInput" class="input-field" placeholder="이메일 주소"
           oninput="onBookingEmailInput(this)" onkeydown="if(event.key==='Enter') document.getElementById('checkPhoneInput').focus()" />
-        <input type="tel" id="checkPhoneInput" class="input-field" placeholder="전화번호 뒷 4자리 (선택 사항)" maxlength="4" inputmode="numeric"
+        <input type="tel" id="checkPhoneInput" class="input-field" placeholder="전화번호 뒷 4자리" maxlength="4" inputmode="numeric"
           onkeydown="if(event.key==='Enter') lookupBooking()" />
         <button class="btn-primary" onclick="lookupBooking()">예매 확인</button>
       </div>
@@ -1167,43 +1167,41 @@
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         showToast('올바른 이메일 주소를 입력해주세요.'); return;
       }
-      if (suffix && !/^\d{4}$/.test(suffix)) {
-        showToast('전화번호 뒷 4자리를 숫자로 입력해주세요.'); return;
+      if (!suffix || !/^\d{4}$/.test(suffix)) {
+        showToast('전화번호 뒷 4자리를 입력해주세요.'); return;
       }
       const btn = document.querySelector('#modeCheck .btn-primary');
       btn.disabled = true; btn.textContent = '확인 중...';
 
       let regularPhoneMismatch = false;
 
-      // 1. 일반 예매 확인 (전화번호 있을 때만)
-      if (suffix) {
-        try {
-          const res = await fetch(CHECK_BOOKING_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, phoneSuffix: suffix }),
-          });
-          if (res.ok) {
-            const data = await res.json();
-            adminReservedSeatIds = [];
-            adminReservedInfo    = null;
-            currentBookingRef    = data.ref;
-            currentBookingSeats  = data.seats;
-            adminCheckEmail      = email.trim().toLowerCase();
-            adminCheckSuffix     = suffix;
-            adminSeatAuthMode    = 'direct';
-            document.getElementById('checkDoneSeats').textContent =
-              data.seats.map(id => id.includes('WC')
-                ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}`
-                : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
-            document.getElementById('checkDonePhone').textContent = formatPhone(data.phone);
-            showPage('checkDone');
-            btn.disabled = false; btn.textContent = '예매 확인';
-            return;
-          }
-          if (res.status === 401) regularPhoneMismatch = true;
-        } catch(e) { console.warn('checkBooking 오류', e); }
-      }
+      // 1. 일반 예매 확인
+      try {
+        const res = await fetch(CHECK_BOOKING_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, phoneSuffix: suffix }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          adminReservedSeatIds = [];
+          adminReservedInfo    = null;
+          currentBookingRef    = data.ref;
+          currentBookingSeats  = data.seats;
+          adminCheckEmail      = email.trim().toLowerCase();
+          adminCheckSuffix     = suffix;
+          adminSeatAuthMode    = 'direct';
+          document.getElementById('checkDoneSeats').textContent =
+            data.seats.map(id => id.includes('WC')
+              ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}`
+              : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          document.getElementById('checkDonePhone').textContent = formatPhone(data.phone);
+          showPage('checkDone');
+          btn.disabled = false; btn.textContent = '예매 확인';
+          return;
+        }
+        if (res.status === 401) regularPhoneMismatch = true;
+      } catch(e) { console.warn('checkBooking 오류', e); }
 
       // 2. 관리자 배정석 확인 (Firestore 직접 조회 — seats/adminBlocked 공개 읽기)
       try {
@@ -1212,15 +1210,11 @@
         if (blkSnap.exists()) {
           const info = blkSnap.data().info || {};
           const normalizedEmail = email.trim().toLowerCase();
-          let phoneRequiredButMissing = false;
 
           const matchedEntries = Object.entries(info).filter(([, v]) => {
             if ((v.email || '').toLowerCase() !== normalizedEmail) return false;
-            if (v.phone) {
-              if (!suffix) { phoneRequiredButMissing = true; return false; }
-              return v.phone.replace(/\D/g, '').slice(-4) === suffix;
-            }
-            return true; // 전화번호 없으면 이메일만으로 인증
+            if (v.phone) return v.phone.replace(/\D/g, '').slice(-4) === suffix;
+            return true;
           });
 
           if (matchedEntries.length > 0) {
@@ -1238,11 +1232,6 @@
             return;
           }
 
-          if (phoneRequiredButMissing) {
-            showToast('전화번호 뒷 4자리를 입력해주세요.');
-            btn.disabled = false; btn.textContent = '예매 확인';
-            return;
-          }
         }
       } catch(e) { console.warn('adminBlocked 조회 오류', e); }
 
