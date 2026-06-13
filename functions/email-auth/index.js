@@ -345,6 +345,16 @@ functions.http('createBooking', async (req, res) => {
   }
 });
 
+// ── 좌석 히스토리 기록 헬퍼 ──
+async function logSeatHistory(db, seatId, action, extra = {}) {
+  try {
+    const ref = db.collection('seatHistory').doc(seatId);
+    const snap = await ref.get();
+    const events = snap.exists ? (snap.data().events || []) : [];
+    await ref.set({ events: [...events, { action, at: new Date().toISOString(), ...extra }] });
+  } catch(e) { console.warn('logSeatHistory 실패', seatId, e); }
+}
+
 // ── 관리자 배정석 지정 (이메일로 Firebase Auth 계정 생성) ──
 functions.http('assignAdminSeat', async (req, res) => {
   setCors(res);
@@ -436,9 +446,19 @@ functions.http('cancelAdminSeat', async (req, res) => {
 
     const newList = list.filter(s => !seatIds.includes(s));
     const newInfo = { ...info };
+    const cancelledInfos = seatIds.map(s => info[s] || {});
     seatIds.forEach(s => delete newInfo[s]);
 
     await blkRef.set({ list: newList, info: newInfo });
+    await Promise.all(seatIds.map((s, i) => {
+      const si = cancelledInfos[i];
+      return logSeatHistory(db, s, 'user_cancelled', {
+        by: email,
+        email: si.email || email,
+        phone: si.phone || '',
+        target: si.target || '',
+      });
+    }));
     res.json({ success: true });
   } catch(e) {
     console.error('cancelAdminSeat error', e);
@@ -491,6 +511,15 @@ functions.http('changeAdminSeat', async (req, res) => {
     newSeats.forEach(s => { newBlkInfo[s] = { ...sharedInfo }; });
 
     await blkRef.set({ list: newBlkList, info: newBlkInfo });
+    const histExtra = {
+      email: sharedInfo.email || email,
+      phone: sharedInfo.phone || '',
+      target: sharedInfo.target || '',
+    };
+    await Promise.all([
+      ...oldSeatIds.map(s => logSeatHistory(db, s, 'user_changed', { by: email, ...histExtra, newSeats })),
+      ...newSeats.map(s  => logSeatHistory(db, s, 'blocked',      { by: email, ...histExtra })),
+    ]);
     res.json({ success: true, newSeats, newSeatId: newSeats[0], info: sharedInfo });
   } catch(e) {
     console.error('changeAdminSeat error', e);
