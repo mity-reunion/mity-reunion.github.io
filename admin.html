@@ -429,7 +429,21 @@
       if (bPhone)    html += `<div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(bPhone)}</span></div>`;
       if (blockedBy) html += `<div class="info-row"><span class="info-key">예약 처리</span><span class="info-val">${esc(blockedBy)}</span></div>`;
       html += `
-        <label class="checkin-row">
+        <div style="margin:12px 0 6px;font-size:0.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">정보 수정</div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="flex:1;min-width:0;">
+            <input class="input-target" id="targetEmail" type="email" value="${esc(bEmail)}" placeholder="이메일 (선택 사항)" oninput="onAdminEmailInput(this)" style="margin-bottom:4px;" />
+            <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:1em;margin-bottom:4px;"></div>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <input class="input-target" id="targetPhone" type="tel" value="${esc(bPhone ? fmtPhone(bPhone) : '')}" placeholder="전화번호" oninput="onAdminPhoneInput(this)" style="margin-bottom:2px;" />
+            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px;">숫자만 입력하세요. 자동으로 형식이 완성됩니다.</div>
+            <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin-bottom:4px;"></div>
+          </div>
+        </div>
+        <button class="btn-block" onclick="doBlock('${esc(id)}')">수정 완료</button>
+        <input class="input-target" id="targetInput" value="${esc(target)}" placeholder="메모 (선택 사항)" style="margin-top:8px;" />
+        <label class="checkin-row" style="margin-top:12px;">
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${esc(id)}', this.checked)"/>
           <span>티켓 수령 완료${checkinBy ? ` <span style="color:var(--muted);font-size:0.75rem">(${esc(checkinBy)})</span>` : ''}</span>
         </label>
