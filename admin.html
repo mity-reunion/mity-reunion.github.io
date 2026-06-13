@@ -542,7 +542,8 @@
       blockedInfo[id] = { target, by: currentAdmin };
       if (email) blockedInfo[id].email = email;
       if (phone) blockedInfo[id].phone = phone;
-      logHistory(id, 'blocked', { target, email, phone });
+      const action = blockedSeats.has(id) ? 'updated' : 'blocked';
+      logHistory(id, action, { target, email, phone });
       buildMaps(); updateStats(); selectSeat(id);
     } catch(e) {
       console.error('배정 실패', e);
@@ -558,6 +559,7 @@
   }
 
   async function doUnblock(id) {
+    const { email = '', phone = '', target = '' } = blockedInfo[id] || {};
     blockedSeats.delete(id);
     delete blockedInfo[id];
     delete checkins[id];
@@ -566,7 +568,7 @@
       setDoc(doc(window._db, 'seats', 'adminBlocked'), { list: [...blockedSeats], info: blockedInfo }),
       setDoc(doc(window._db, 'seats', 'checkins'), checkins),
     ]);
-    logHistory(id, 'unblocked');
+    logHistory(id, 'unblocked', { email, phone, target });
     buildMaps(); updateStats(); selectSeat(id);
   }
 
@@ -661,15 +663,16 @@
       return;
     }
 
-    const labelMap = { booked:'예매됨', cancelled:'취소됨', 'checked-in':'수령 완료', 'checked-out':'수령 취소', blocked:'예약 지정', unblocked:'예약 해제' };
-    const colorMap = { booked:'#cc2200', cancelled:'#ff6b6b', 'checked-in':'#4ade80', 'checked-out':'#9ca3af', blocked:'#f97316', unblocked:'#9ca3af' };
+    const labelMap = { booked:'예매됨', cancelled:'취소됨', 'checked-in':'수령 완료', 'checked-out':'수령 취소', blocked:'예약 지정', updated:'예약 변경', unblocked:'예약 해제' };
+    const colorMap = { booked:'#cc2200', cancelled:'#ff6b6b', 'checked-in':'#4ade80', 'checked-out':'#9ca3af', blocked:'#f97316', updated:'#fbbf24', unblocked:'#9ca3af' };
 
     list.className = 'history-list';
     list.innerHTML = all.map(e => `
       <div class="history-item">
         <div class="history-action-lbl" style="color:${colorMap[e.action]||'#fff'}">${labelMap[e.action]||esc(e.action)}</div>
         <div class="history-meta-lbl">${esc(e.by)||'예매자'} · ${fmtDate(e.at)}</div>
-        ${e.email ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.3)">${esc(e.email)}${e.phone ? ' · ' + fmtPhone(e.phone) : ''}</div>` : ''}
+        ${e.email || e.phone ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.3)">${[e.email ? esc(e.email) : '', e.phone ? fmtPhone(e.phone) : ''].filter(Boolean).join(' · ')}</div>` : ''}
+        ${e.target ? `<div style="font-size:0.65rem;color:rgba(255,255,255,0.25)">메모: ${esc(e.target)}</div>` : ''}
       </div>`).join('');
 
   }
