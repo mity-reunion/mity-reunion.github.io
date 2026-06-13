@@ -1298,10 +1298,14 @@
       btn.disabled = true; btn.textContent = '저장 중...';
       try {
         const { doc, updateDoc } = window._firestoreLib;
-        await updateDoc(doc(window._db, 'users', currentUser.id), {
-          phone,
-          updatedAt: new Date().toISOString(),
-        });
+        const now = new Date().toISOString();
+        const updates = [
+          updateDoc(doc(window._db, 'users', currentUser.id), { phone, updatedAt: now }),
+        ];
+        if (currentBookingRef) {
+          updates.push(updateDoc(doc(window._db, 'bookings', currentBookingRef), { phone, updatedAt: now }));
+        }
+        await Promise.all(updates);
         currentUser.phone = phone;
         sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
         document.getElementById('donePhone').textContent = formatPhone(phone);
