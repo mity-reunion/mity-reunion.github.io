@@ -957,10 +957,13 @@
             sessionStorage.removeItem('check_session');
             showPage('email');
           } else {
+            const _closed = isBookingClosed();
+            selected.clear();
+            showPage(_closed ? 'bookingClosed' : 'seat');
             reserved.clear();
             await loadReserved();
             seatsBuilt = false;
-            if (isBookingClosed()) { showPage('bookingClosed'); } else { showPage('seat'); buildSeats(); }
+            if (!_closed) buildSeats();
           }
           adminSeatAuthMode = 'token';
         } catch(e) {
@@ -998,10 +1001,11 @@
           showPage('email');
         } else {
           document.getElementById('btnCancelBooking').style.display = 'none';
+          selected.clear();
+          showPage('seat');
           reserved.clear();
           await loadReserved();
           seatsBuilt = false;
-          showPage('seat');
           buildSeats();
         }
       } catch(e) {
