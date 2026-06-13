@@ -334,6 +334,16 @@
     </div>
   </div>
 
+  <!-- 관리자 계정 진입 차단 -->
+  <div class="page" id="pageAdminBlocked">
+    <div class="preopen-box fade-up">
+      <p class="preopen-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+      <p style="font-size:1.4rem;font-weight:900;letter-spacing:0.05em;">예매 불가</p>
+      <p style="font-size:0.82rem;color:var(--muted);line-height:1.8;text-align:center;">관리자 계정으로는 예매할 수 없습니다.<br>관리자 페이지를 이용해 주세요.</p>
+      <button class="btn-home" style="margin-top:4px;" onclick="location.href='/admin.html'">관리자 페이지로 이동</button>
+    </div>
+  </div>
+
   <!-- 로딩 -->
   <div class="page active" id="pageLoading">
     <div class="loading-box">
@@ -658,6 +668,8 @@
       // Auth 상태 감지
       onAuthStateChanged(auth, async user => {
         if (user) {
+          const tokenResult = await user.getIdTokenResult();
+          if (tokenResult.claims.admin) { showPage('adminBlocked'); return; }
           const saved = sessionStorage.getItem('booking_user');
           if (saved) {
             currentUser = JSON.parse(saved);
