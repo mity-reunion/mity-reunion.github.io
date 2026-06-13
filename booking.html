@@ -189,11 +189,12 @@
     .btn-book:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
 
     /* ── 완료 ── */
-    #pageDone, #pageSeat { padding-top: 52px; }
+    #pageSeat { padding-top: 52px; }
+    #pageDone { justify-content: flex-start; padding-top: 110px; }
     .done-box   { width: min(440px, 90vw); display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
     .done-actions { display: flex; gap: 10px; width: 100%; margin-top: 4px; }
     .done-actions > button { flex: 1; margin-top: 0; }
-    .done-title { font-size: 1.3rem; font-weight: 900; letter-spacing: 0.15em; color: var(--white); margin-bottom: 4px; }
+    .done-title { font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 900; letter-spacing: -0.02em; color: var(--white); margin-bottom: 8px; }
     .done-info  { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; }
     .done-row   { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
     .done-row:last-child { border-bottom: none; }
@@ -274,12 +275,11 @@
     .book-menu-logout { display: block; padding: 20px 40px; width: 100%; background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--white); font-family: inherit; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.2em; cursor: pointer; text-align: left; transition: opacity 0.2s; }
     .book-menu-logout:hover { opacity: 0.45; }
     @media (max-width: 520px) {
-      .nav-right { display: none; }
-      .book-hamburger { display: flex; }
+      .nav-user, .nav-step { display: none; }
+      .book-hamburger { display: none; }
     }
     @media (max-width: 680px) {
       nav { padding: 16px 20px; }
-      .book-hamburger { top: 16px; right: 20px; }
     }
   </style>
 </head>
@@ -1490,6 +1490,8 @@
           data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
         document.getElementById('donePhone').textContent = currentUser.phone ? formatPhone(currentUser.phone) : '—';
         document.getElementById('btnCancelBooking').style.display = '';
+        const _peb = document.querySelector('#pageDone .btn-phone-edit');
+        if (_peb) _peb.style.display = '';
         selected.clear(); updateSidebar();
         showPage('done');
       } catch(e) {
