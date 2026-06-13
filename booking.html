@@ -538,21 +538,40 @@
     const CANCEL_BOOKING_URL   = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/cancelBooking';
     const CHANGE_BOOKING_URL   = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/changeBooking';
     const CHECK_BOOKING_URL    = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/checkBooking';
-    const CHANGE_ADMIN_SEAT_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/changeAdminSeat';
-    const CANCEL_ADMIN_SEAT_URL = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/cancelAdminSeat';
+    const CHANGE_ADMIN_SEAT_URL      = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/changeAdminSeat';
+    const CANCEL_ADMIN_SEAT_URL      = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/cancelAdminSeat';
+    const UPDATE_BOOKING_PHONE_URL   = 'https://asia-northeast3-project-db5c658a-6cfe-4cbd-bb6.cloudfunctions.net/updateBookingPhone';
 
     // ── 상태 ──
     let currentUser = null;   // { id, email, phone }
     let reserved    = new Set();
     const selected  = new Set();
 
-    // 관리자 배정석 상태
+    // 관리자 배정석 / 예매확인 상태
     let adminReservedSeatIds    = [];      // 배정된 좌석 ID 배열
     let adminReservedInfo       = null;   // { target, email, phone, by }
     let pendingAdminSeatChange  = false;  // 인증 후 바로 좌석 변경 화면으로 이동
-    let adminCheckEmail         = '';     // quick check에서 사용한 이메일
-    let adminCheckSuffix        = '';     // quick check에서 사용한 전화번호 뒷4자리
+    let adminCheckEmail         = '';     // 예매확인에서 사용한 이메일
+    let adminCheckSuffix        = '';     // 예매확인에서 사용한 전화번호 뒷4자리
+    let adminCheckPhone         = '';     // 예매확인 경로의 전화번호 전체
     let adminSeatAuthMode       = 'token'; // 'token' | 'direct'
+    let currentBookingRef       = null;
+    let currentBookingSeats     = [];
+
+    // ── 예매확인 세션 저장 (새로고침 유지) ──
+    function saveCheckSession() {
+      sessionStorage.setItem('check_session', JSON.stringify({
+        email:               adminCheckEmail,
+        phoneSuffix:         adminCheckSuffix,
+        phone:               adminCheckPhone,
+        bookingRef:          currentBookingRef,
+        bookingSeats:        currentBookingSeats,
+        adminReservedSeatIds,
+        adminReservedInfo,
+        seatsText:  document.getElementById('checkDoneSeats').textContent,
+        phoneText:  document.getElementById('checkDonePhone').textContent,
+      }));
+    }
 
     function formatSeatLabel(id) {
       if (!id) return '—';
@@ -646,6 +665,31 @@
             await loadPhoneAndProceed();
           }
         } else {
+          // Firebase 미인증 — 저장된 예매확인 세션 복원
+          const checkSaved = sessionStorage.getItem('check_session');
+          if (checkSaved) {
+            try {
+              const s = JSON.parse(checkSaved);
+              adminCheckEmail      = s.email || '';
+              adminCheckSuffix     = s.phoneSuffix || '';
+              adminCheckPhone      = s.phone || '';
+              adminSeatAuthMode    = 'direct';
+              currentBookingRef    = s.bookingRef || null;
+              currentBookingSeats  = s.bookingSeats || [];
+              adminReservedSeatIds = s.adminReservedSeatIds || [];
+              adminReservedInfo    = s.adminReservedInfo || null;
+              document.getElementById('checkDoneSeats').textContent = s.seatsText || '';
+              document.getElementById('checkDonePhone').textContent = s.phoneText || '';
+              document.getElementById('btnLogout').style.display = '';
+              const closed = isBookingClosed();
+              document.getElementById('btnCheckDoneSeatView').style.display = closed ? 'none' : '';
+              document.getElementById('btnCheckDoneCancel').style.display   = closed ? 'none' : '';
+              showPage('checkDone');
+              return;
+            } catch(e) {
+              sessionStorage.removeItem('check_session');
+            }
+          }
           showPage('email');
           if (isBookingClosed()) {
             document.getElementById('tabBook').style.display = 'none';
@@ -855,9 +899,6 @@
     }
 
     // ── 이미 예매된 경우 완료 화면 표시 ──
-    let currentBookingRef = null;
-    let currentBookingSeats = [];
-
     function showExistingBooking(booking) {
       document.getElementById('btnLogout').style.display = '';
       document.getElementById('btnLogoutMobile').style.display = '';
@@ -901,10 +942,12 @@
           adminReservedInfo    = null;
           adminCheckEmail      = '';
           adminCheckSuffix     = '';
+          adminCheckPhone      = '';
           const phoneEditBtn = document.querySelector('.btn-phone-edit');
           if (phoneEditBtn) phoneEditBtn.style.display = '';
           showToast('예약이 취소되었습니다.');
           if (adminSeatAuthMode === 'direct') {
+            sessionStorage.removeItem('check_session');
             showPage('email');
           } else {
             reserved.clear();
@@ -939,13 +982,21 @@
         closeCancelModal();
         currentBookingRef = null;
         currentBookingSeats = [];
-        document.getElementById('btnCancelBooking').style.display = 'none';
+        showToast('예매가 취소되었습니다.');
 
-        reserved.clear();
-        await loadReserved();
-        seatsBuilt = false;
-        showPage('seat');
-        buildSeats();
+        if (adminSeatAuthMode === 'direct') {
+          sessionStorage.removeItem('check_session');
+          adminCheckEmail = ''; adminCheckSuffix = ''; adminCheckPhone = '';
+          adminSeatAuthMode = 'token';
+          showPage('email');
+        } else {
+          document.getElementById('btnCancelBooking').style.display = 'none';
+          reserved.clear();
+          await loadReserved();
+          seatsBuilt = false;
+          showPage('seat');
+          buildSeats();
+        }
       } catch(e) {
         console.error('취소 오류', e);
         showToast('취소 처리 중 오류가 발생했습니다.');
@@ -1047,9 +1098,9 @@
           selected.clear();
           resetSeatPageUI();
           if (adminSeatAuthMode === 'direct') {
-            // 예매확인 결과 화면으로 돌아가기
             document.getElementById('checkDoneSeats').textContent =
               adminReservedSeatIds.map(formatSeatLabel).join(', ');
+            saveCheckSession();
             showPage('checkDone');
           } else {
             showAdminReservedBooking();
@@ -1092,6 +1143,7 @@
         if (adminSeatAuthMode === 'direct') {
           document.getElementById('checkDoneSeats').textContent =
             data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          saveCheckSession();
           showPage('checkDone');
         } else {
           document.getElementById('doneSeats').textContent =
@@ -1199,8 +1251,10 @@
             data.seats.map(id => id.includes('WC')
               ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}`
               : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          adminCheckPhone = data.phone || '';
           document.getElementById('checkDonePhone').textContent = formatPhone(data.phone);
           document.getElementById('btnLogout').style.display = '';
+          saveCheckSession();
           showPage('checkDone');
           btn.disabled = false; btn.textContent = '예매 확인';
           return;
@@ -1230,9 +1284,11 @@
             adminSeatAuthMode    = 'direct';
             document.getElementById('checkDoneSeats').textContent =
               adminReservedSeatIds.map(formatSeatLabel).join(', ');
+            adminCheckPhone = adminReservedInfo?.phone || '';
             document.getElementById('checkDonePhone').textContent =
               adminReservedInfo?.phone ? formatPhone(adminReservedInfo.phone) : '—';
             document.getElementById('btnLogout').style.display = '';
+            saveCheckSession();
             showPage('checkDone');
             btn.disabled = false; btn.textContent = '예매 확인';
             return;
@@ -1279,8 +1335,11 @@
     }
 
     function openPhoneEditModal() {
-      if (!currentUser?.id) { showToast('이메일 인증 후 전화번호를 변경할 수 있습니다.'); return; }
-      document.getElementById('phoneEditInput').value = currentUser.phone ? formatPhone(currentUser.phone) : '';
+      if (!currentUser?.id && adminSeatAuthMode !== 'direct') {
+        showToast('이메일 인증 후 전화번호를 변경할 수 있습니다.'); return;
+      }
+      const phone = currentUser?.phone || adminCheckPhone || '';
+      document.getElementById('phoneEditInput').value = phone ? formatPhone(phone) : '';
       document.getElementById('phoneEditModal').classList.add('open');
     }
     function closePhoneEditModal() {
@@ -1293,18 +1352,33 @@
       const btn = document.getElementById('btnConfirmPhoneEdit');
       btn.disabled = true; btn.textContent = '저장 중...';
       try {
-        const { doc, updateDoc } = window._firestoreLib;
-        const now = new Date().toISOString();
-        const updates = [
-          updateDoc(doc(window._db, 'users', currentUser.id), { phone, updatedAt: now }),
-        ];
-        if (currentBookingRef) {
-          updates.push(updateDoc(doc(window._db, 'bookings', currentBookingRef), { phone, updatedAt: now }));
+        if (adminSeatAuthMode === 'direct') {
+          // 예매확인 경로 (비인증): Cloud Function으로 전화번호 업데이트
+          const res = await fetch(UPDATE_BOOKING_PHONE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: adminCheckEmail, phoneSuffix: adminCheckSuffix, newPhone: phone }),
+          });
+          if (!res.ok) { showToast('수정 중 오류가 발생했습니다.'); return; }
+          adminCheckPhone  = phone;
+          adminCheckSuffix = phone.replace(/\D/g, '').slice(-4);
+          document.getElementById('checkDonePhone').textContent = formatPhone(phone);
+          saveCheckSession();
+        } else {
+          // Firebase 인증 경로: Firestore 직접 업데이트
+          const { doc, updateDoc } = window._firestoreLib;
+          const now = new Date().toISOString();
+          const updates = [
+            updateDoc(doc(window._db, 'users', currentUser.id), { phone, updatedAt: now }),
+          ];
+          if (currentBookingRef) {
+            updates.push(updateDoc(doc(window._db, 'bookings', currentBookingRef), { phone, updatedAt: now }));
+          }
+          await Promise.all(updates);
+          currentUser.phone = phone;
+          sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
+          document.getElementById('donePhone').textContent = formatPhone(phone);
         }
-        await Promise.all(updates);
-        currentUser.phone = phone;
-        sessionStorage.setItem('booking_user', JSON.stringify(currentUser));
-        document.getElementById('donePhone').textContent = formatPhone(phone);
         closePhoneEditModal();
         showToast('전화번호가 수정되었습니다.');
       } catch(e) {
@@ -1319,6 +1393,7 @@
     function logout() {
       sessionStorage.removeItem('booking_user');
       sessionStorage.removeItem('emailForSignIn');
+      sessionStorage.removeItem('check_session');
       if (window._auth && window._authLib) window._authLib.signOut(window._auth).catch(() => {});
       currentUser = null;
       selected.clear();
@@ -1327,6 +1402,7 @@
       pendingAdminSeatChange = false;
       adminCheckEmail        = '';
       adminCheckSuffix       = '';
+      adminCheckPhone        = '';
       adminSeatAuthMode      = 'token';
       const phoneEditBtn = document.querySelector('.btn-phone-edit');
       if (phoneEditBtn) phoneEditBtn.style.display = '';

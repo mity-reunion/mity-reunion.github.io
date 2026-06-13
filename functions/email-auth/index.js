@@ -554,3 +554,72 @@ functions.http('checkBooking', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// ── 전화번호 수정 (비인증 — 이메일 + 전화번호 뒷 4자리로 소유권 검증) ──
+functions.http('updateBookingPhone', async (req, res) => {
+  setCors(res);
+  if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method Not Allowed' }); return; }
+
+  const { email, phoneSuffix, newPhone } = req.body || {};
+  if (!email || !phoneSuffix || !newPhone) {
+    res.status(400).json({ error: 'email, phoneSuffix, newPhone required' }); return;
+  }
+  if (!/^\d{4}$/.test(phoneSuffix)) {
+    res.status(400).json({ error: 'phoneSuffix must be 4 digits' }); return;
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedPhone = newPhone.replace(/\D/g, '');
+  if (normalizedPhone.length < 10) {
+    res.status(400).json({ error: 'invalid_phone' }); return;
+  }
+
+  const db = admin.firestore();
+  try {
+    // 1. 일반 예매 확인
+    const snap = await db.collection('bookings')
+      .where('email', '==', normalizedEmail)
+      .where('status', '==', 'confirmed')
+      .get();
+    const bookingDoc = snap.docs[0];
+    if (bookingDoc) {
+      const booking = bookingDoc.data();
+      const storedDigits = (booking.phone || '').replace(/\D/g, '');
+      if (!storedDigits || storedDigits.slice(-4) !== phoneSuffix) {
+        res.status(401).json({ error: 'phone_mismatch' }); return;
+      }
+      const now = new Date().toISOString();
+      await bookingDoc.ref.update({ phone: normalizedPhone, updatedAt: now });
+      try {
+        const authUser = await admin.auth().getUserByEmail(normalizedEmail);
+        await db.collection('users').doc(authUser.uid).update({ phone: normalizedPhone, updatedAt: now });
+      } catch(e) { /* Firebase Auth 계정 없을 경우 무시 */ }
+      res.json({ success: true }); return;
+    }
+
+    // 2. 관리자 배정석 확인
+    const blkRef = db.collection('seats').doc('adminBlocked');
+    const blkSnap = await blkRef.get();
+    if (blkSnap.exists) {
+      const info = blkSnap.data().info || {};
+      const matched = Object.entries(info).filter(([, v]) => {
+        if ((v.email || '').toLowerCase() !== normalizedEmail) return false;
+        if (v.phone) return v.phone.replace(/\D/g, '').slice(-4) === phoneSuffix;
+        return true;
+      });
+      if (matched.length > 0) {
+        const updatedInfo = { ...info };
+        for (const [seatId] of matched) {
+          updatedInfo[seatId] = { ...updatedInfo[seatId], phone: normalizedPhone };
+        }
+        await blkRef.update({ info: updatedInfo });
+        res.json({ success: true }); return;
+      }
+    }
+
+    res.status(404).json({ error: 'not_found' });
+  } catch(e) {
+    console.error('updateBookingPhone error:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
