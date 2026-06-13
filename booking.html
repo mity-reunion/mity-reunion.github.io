@@ -1546,10 +1546,11 @@
             showToast('이미 예매 내역이 있습니다.');
           } else if (err.error === 'seat_taken') {
             showToast('선택하신 좌석이 방금 예매되었습니다. 다시 선택해 주세요.');
-            await loadReserved(); seatsBuilt = false; buildSeats();
           } else {
             showToast('예매 저장 중 오류가 발생했습니다.');
           }
+          selected.clear();
+          await loadReserved(); seatsBuilt = false; buildSeats(); updateSidebar();
           btn.disabled = false; btn.textContent = '예매 확정';
           return;
         }
@@ -1569,6 +1570,8 @@
       } catch(e) {
         showToast('예매 저장 중 오류가 발생했습니다.');
         console.error(e);
+        selected.clear();
+        await loadReserved(); seatsBuilt = false; buildSeats(); updateSidebar();
         btn.disabled = false; btn.textContent = '예매 확정';
       }
     }
