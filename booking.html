@@ -1459,6 +1459,7 @@
 
     function buildB2F() {
       const map = document.getElementById('mapB2F');
+      map.innerHTML = '';
       ['A','B','C','D','E','F','G'].forEach(row => {
         const rowEl = document.createElement('div');
         rowEl.className = 'seat-row';
@@ -1471,6 +1472,7 @@
 
     function buildB1F() {
       const map = document.getElementById('mapB1F');
+      map.innerHTML = '';
       ['H','I','J','K'].forEach(row => {
         const rowEl = document.createElement('div');
         rowEl.className = 'seat-row';
