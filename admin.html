@@ -431,7 +431,7 @@
       html += `
         <div style="margin:12px 0 6px;font-size:0.8rem;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">정보 수정</div>
         <input class="input-target" id="targetEmail" type="email" value="${esc(bEmail)}" placeholder="이메일 (선택 사항)" oninput="onAdminEmailInput(this)" />
-        <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 4px;"></div>
+        <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:0.9em;margin:-6px 0 2px;"></div>
         <input class="input-target" id="targetPhone" type="tel" value="${esc(bPhone ? fmtPhone(bPhone) : '')}" placeholder="전화번호" oninput="onAdminPhoneInput(this)" />
         <div style="font-size:0.72rem;color:var(--muted);margin:-4px 0 2px;">숫자만 입력하세요. 자동으로 형식이 완성됩니다.</div>
         <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin-bottom:8px;"></div>
@@ -450,7 +450,7 @@
       html += `
         <div style="font-size:0.8rem;color:var(--muted);margin:6px 0 10px;">선택 가능한 좌석</div>
         <input class="input-target" id="targetEmail" type="email" placeholder="이메일 (선택 사항)" oninput="onAdminEmailInput(this)" />
-        <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:1em;margin:-4px 0 4px;"></div>
+        <div id="emailError" style="font-size:0.75rem;color:#e55;min-height:0.9em;margin:-6px 0 2px;"></div>
         <input class="input-target" id="targetPhone" type="tel" placeholder="전화번호 (이메일 입력 시 필수)" oninput="onAdminPhoneInput(this)" />
         <div style="font-size:0.72rem;color:var(--muted);margin:-4px 0 2px;">숫자만 입력하세요. 자동으로 형식이 완성됩니다.</div>
         <div id="phoneError" style="font-size:0.75rem;color:#e55;min-height:1em;margin-bottom:8px;"></div>
