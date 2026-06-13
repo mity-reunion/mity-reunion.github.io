@@ -1604,7 +1604,7 @@
 
     // ── 유틸 ──
     function showPage(name) {
-      const map = { loading:'pageLoading', preOpen:'pagePreOpen', bookingClosed:'pageBookingClosed', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone', checkDone:'pageCheckDone' };
+      const map = { loading:'pageLoading', preOpen:'pagePreOpen', bookingClosed:'pageBookingClosed', adminBlocked:'pageAdminBlocked', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone', checkDone:'pageCheckDone' };
       const next = document.getElementById(map[name]);
       const current = document.querySelector('.page.active');
       if (current && current !== next) {
