@@ -1067,10 +1067,13 @@
             const err = await res.json().catch(() => ({}));
             if (err.error === 'seat_taken') {
               showToast('선택하신 좌석이 이미 예매되었습니다. 다시 선택해 주세요.');
-              await loadReserved(); seatsBuilt = false; buildSeats();
             } else {
               showToast('변경 중 오류가 발생했습니다.');
             }
+            await loadReserved();
+            selected.clear();
+            adminReservedSeatIds.forEach(s => { reserved.delete(s); selected.add(s); });
+            seatsBuilt = false; buildSeats(); updateSidebar();
             btn.disabled = false; btn.textContent = '변경 확정';
             return;
           }
@@ -1092,6 +1095,10 @@
         } catch(e) {
           console.error('관리자 배정석 변경 실패', e);
           showToast('변경 중 오류가 발생했습니다.');
+          await loadReserved();
+          selected.clear();
+          adminReservedSeatIds.forEach(s => { reserved.delete(s); selected.add(s); });
+          seatsBuilt = false; buildSeats(); updateSidebar();
           btn.disabled = false; btn.textContent = '변경 확정';
         }
         return;
@@ -1112,10 +1119,13 @@
           const err = await res.json().catch(() => ({}));
           if (err.error === 'seat_taken') {
             showToast('선택하신 좌석이 방금 예매되었습니다. 다시 선택해 주세요.');
-            await loadReserved(); seatsBuilt = false; buildSeats();
           } else {
             showToast('변경 중 오류가 발생했습니다.');
           }
+          await loadReserved();
+          selected.clear();
+          currentBookingSeats.forEach(s => { reserved.delete(s); selected.add(s); });
+          seatsBuilt = false; buildSeats(); updateSidebar();
           btn.disabled = false; btn.textContent = '변경 확정';
           return;
         }
@@ -1138,6 +1148,10 @@
       } catch(e) {
         console.error('좌석 변경 실패', e);
         showToast('변경 중 오류가 발생했습니다.');
+        await loadReserved();
+        selected.clear();
+        currentBookingSeats.forEach(s => { reserved.delete(s); selected.add(s); });
+        seatsBuilt = false; buildSeats(); updateSidebar();
         btn.disabled = false; btn.textContent = '변경 확정';
       }
     }
