@@ -1046,7 +1046,8 @@
       document.getElementById('seatPageTitle').textContent = '좌석 선택';
       document.getElementById('seatPageSub').textContent = '원하는 좌석을 선택해 주세요 · 최대 2석 · 무료';
       document.getElementById('btnBackDone').style.display = 'none';
-      document.getElementById('btnChangeConfirm').style.display = 'none';
+      const _btnChange = document.getElementById('btnChangeConfirm');
+      _btnChange.style.display = 'none'; _btnChange.textContent = '변경 확정'; _btnChange.disabled = false;
       document.getElementById('btnCancelChange').style.display = 'none';
       document.getElementById('btnBook').style.display = '';
       document.querySelector('.seat-summary').style.display = '';
@@ -1508,6 +1509,7 @@
       document.querySelectorAll('.seat').forEach(btn => {
         const id = btn.dataset.id;
         btn.classList.toggle('reserved', reserved.has(id));
+        btn.classList.toggle('selected', selected.has(id));
         btn.onclick = (reserved.has(id) || viewOnly) ? null : () => toggleSeat(id, btn);
       });
     }
