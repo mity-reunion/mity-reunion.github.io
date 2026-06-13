@@ -502,7 +502,10 @@
         </div>
         <div class="done-row">
           <span class="done-key">전화번호</span>
-          <span class="done-val" id="checkDonePhone">—</span>
+          <span style="display:flex;align-items:center;gap:8px;">
+            <span class="done-val" id="checkDonePhone">—</span>
+            <button class="btn-phone-edit" onclick="openPhoneEditModal()">수정</button>
+          </span>
         </div>
       </div>
       <div class="done-actions">
@@ -856,7 +859,9 @@
     let currentBookingSeats = [];
 
     function showExistingBooking(booking) {
-      const phoneEditBtn = document.querySelector('.btn-phone-edit');
+      document.getElementById('btnLogout').style.display = '';
+      document.getElementById('btnLogoutMobile').style.display = '';
+      const phoneEditBtn = document.querySelector('#pageDone .btn-phone-edit');
       if (phoneEditBtn) phoneEditBtn.style.display = '';
       currentBookingRef = booking.ref;
       currentBookingSeats = booking.seats || [];
@@ -1195,6 +1200,7 @@
               ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}`
               : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
           document.getElementById('checkDonePhone').textContent = formatPhone(data.phone);
+          document.getElementById('btnLogout').style.display = '';
           showPage('checkDone');
           btn.disabled = false; btn.textContent = '예매 확인';
           return;
@@ -1226,6 +1232,7 @@
               adminReservedSeatIds.map(formatSeatLabel).join(', ');
             document.getElementById('checkDonePhone').textContent =
               adminReservedInfo?.phone ? formatPhone(adminReservedInfo.phone) : '—';
+            document.getElementById('btnLogout').style.display = '';
             showPage('checkDone');
             btn.disabled = false; btn.textContent = '예매 확인';
             return;
@@ -1272,6 +1279,7 @@
     }
 
     function openPhoneEditModal() {
+      if (!currentUser?.id) { showToast('이메일 인증 후 전화번호를 변경할 수 있습니다.'); return; }
       document.getElementById('phoneEditInput').value = currentUser.phone ? formatPhone(currentUser.phone) : '';
       document.getElementById('phoneEditModal').classList.add('open');
     }
