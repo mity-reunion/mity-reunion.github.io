@@ -478,8 +478,8 @@
         </div>
       </div>
       <div class="done-actions">
-        <button class="btn-seat-view" onclick="showSeatView()">좌석 변경</button>
-        <button class="btn-cancel-red" id="btnCancelBooking" style="display:none" onclick="openCancelModal()">취소하기</button>
+        <button class="btn-seat-view" id="btnSeatView" onclick="showSeatView()">좌석 변경</button>
+        <button class="btn-cancel-red" id="btnCancelBooking" onclick="openCancelModal()">취소하기</button>
       </div>
     </div>
   </div>
@@ -500,32 +500,6 @@
     </div>
   </div>
 
-  <!-- 예매확인 결과 (읽기 전용) -->
-  <div class="page" id="pageCheckDone">
-    <div class="done-box fade-up">
-      <h2 class="done-title">예매내역</h2>
-      <div class="notice-box">
-        공연은 별도의 대기 없이 정시에 시작하며, 공연 시작 후 도착하신 인원은 약 20분 후 지연입장 도와드릴 예정이니 최소 공연시작 10분 전까지 도착 부탁드립니다.
-      </div>
-      <div class="done-info">
-        <div class="done-row">
-          <span class="done-key">예매 좌석</span>
-          <span class="done-val" id="checkDoneSeats">—</span>
-        </div>
-        <div class="done-row">
-          <span class="done-key">전화번호</span>
-          <span style="display:flex;align-items:center;gap:8px;">
-            <span class="done-val" id="checkDonePhone">—</span>
-            <button class="btn-phone-edit" onclick="openPhoneEditModal()">수정</button>
-          </span>
-        </div>
-      </div>
-      <div class="done-actions">
-        <button class="btn-seat-view" id="btnCheckDoneSeatView" onclick="startDirectSeatChange()">좌석 변경</button>
-        <button class="btn-cancel-red" id="btnCheckDoneCancel" onclick="openCancelModal()">취소하기</button>
-      </div>
-    </div>
-  </div>
 
   <!-- 취소 확인 모달 -->
   <div class="modal-backdrop" id="cancelModal">
@@ -580,8 +554,8 @@
         bookingSeats:        currentBookingSeats,
         adminReservedSeatIds,
         adminReservedInfo,
-        seatsText:  document.getElementById('checkDoneSeats').textContent,
-        phoneText:  document.getElementById('checkDonePhone').textContent,
+        seatsText:  document.getElementById('doneSeats').textContent,
+        phoneText:  document.getElementById('donePhone').textContent,
       }));
     }
 
@@ -692,16 +666,17 @@
               currentBookingSeats  = s.bookingSeats || [];
               adminReservedSeatIds = s.adminReservedSeatIds || [];
               adminReservedInfo    = s.adminReservedInfo || null;
-              document.getElementById('checkDoneSeats').textContent = s.seatsText || '';
-              document.getElementById('checkDonePhone').textContent = s.phoneText || '';
+              document.getElementById('doneSeats').textContent = s.seatsText || '';
+              document.getElementById('donePhone').textContent = s.phoneText || '';
               document.getElementById('btnLogout').style.display = '';
               const closed = isBookingClosed();
-              document.getElementById('btnCheckDoneSeatView').style.display = closed ? 'none' : '';
-              document.getElementById('btnCheckDoneCancel').style.display   = closed ? 'none' : '';
+              document.getElementById('btnSeatView').style.display    = closed ? 'none' : '';
+              document.getElementById('btnCancelBooking').style.display = closed ? 'none' : '';
+              document.querySelector('#pageDone .btn-phone-edit').style.display = '';
               if (!closed && sessionStorage.getItem('seat_change_session')) {
                 await showSeatView(); return;
               }
-              showPage('checkDone');
+              showPage('done');
               return;
             } catch(e) {
               sessionStorage.removeItem('check_session');
@@ -884,11 +859,10 @@
         adminReservedSeatIds.map(formatSeatLabel).join(', ');
       document.getElementById('donePhone').textContent =
         adminReservedInfo?.phone ? formatPhone(adminReservedInfo.phone) : '—';
-      const phoneEditBtn = document.querySelector('.btn-phone-edit');
-      if (phoneEditBtn) phoneEditBtn.style.display = 'none';
+      document.querySelector('#pageDone .btn-phone-edit').style.display = 'none';
       const closed = isBookingClosed();
       document.getElementById('btnCancelBooking').style.display = closed ? 'none' : '';
-      document.querySelector('.btn-seat-view').style.display    = closed ? 'none' : '';
+      document.getElementById('btnSeatView').style.display      = closed ? 'none' : '';
 
       if (!closed && (pendingAdminSeatChange || sessionStorage.getItem('seat_change_session'))) {
         pendingAdminSeatChange = false;
@@ -927,7 +901,7 @@
       document.getElementById('donePhone').textContent = currentUser.phone ? formatPhone(currentUser.phone) : '—';
       const closed = isBookingClosed();
       document.getElementById('btnCancelBooking').style.display = closed ? 'none' : '';
-      document.querySelector('.btn-seat-view').style.display = closed ? 'none' : '';
+      document.getElementById('btnSeatView').style.display      = closed ? 'none' : '';
       if (!closed && sessionStorage.getItem('seat_change_session')) {
         await showSeatView(); return;
       }
@@ -1096,10 +1070,14 @@
           resetSeatPageUI();
           sessionStorage.removeItem('seat_change_session');
           if (adminSeatAuthMode === 'direct') {
-            document.getElementById('checkDoneSeats').textContent =
+            document.getElementById('doneSeats').textContent =
               adminReservedSeatIds.map(formatSeatLabel).join(', ');
+            const cl = isBookingClosed();
+            document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
+            document.getElementById('btnCancelBooking').style.display  = cl ? 'none' : '';
+            document.querySelector('#pageDone .btn-phone-edit').style.display = '';
             saveCheckSession();
-            showPage('checkDone');
+            showPage('done');
           } else {
             showAdminReservedBooking();
           }
@@ -1146,16 +1124,16 @@
         selected.clear();
         resetSeatPageUI();
         sessionStorage.removeItem('seat_change_session');
+        document.getElementById('doneSeats').textContent =
+          data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
         if (adminSeatAuthMode === 'direct') {
-          document.getElementById('checkDoneSeats').textContent =
-            data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          const cl = isBookingClosed();
+          document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
+          document.getElementById('btnCancelBooking').style.display  = cl ? 'none' : '';
+          document.querySelector('#pageDone .btn-phone-edit').style.display = '';
           saveCheckSession();
-          showPage('checkDone');
-        } else {
-          document.getElementById('doneSeats').textContent =
-            data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
-          showPage('done');
         }
+        showPage('done');
         showToast('좌석이 변경되었습니다.');
       } catch(e) {
         console.error('좌석 변경 실패', e);
@@ -1173,10 +1151,12 @@
       selected.clear();
       resetSeatPageUI();
       if (adminSeatAuthMode === 'direct') {
-        showPage('checkDone');
-      } else {
-        showPage('done');
+        const cl = isBookingClosed();
+        document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
+        document.getElementById('btnCancelBooking').style.display  = cl ? 'none' : '';
+        document.querySelector('#pageDone .btn-phone-edit').style.display = '';
       }
+      showPage('done');
     }
 
     // ── 전화번호 정규화 (+82 10-xxxx-xxxx → 01012345678) ──
@@ -1258,15 +1238,19 @@
           adminCheckEmail      = email.trim().toLowerCase();
           adminCheckSuffix     = suffix;
           adminSeatAuthMode    = 'direct';
-          document.getElementById('checkDoneSeats').textContent =
+          document.getElementById('doneSeats').textContent =
             data.seats.map(id => id.includes('WC')
               ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}`
               : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
           adminCheckPhone = data.phone || '';
-          document.getElementById('checkDonePhone').textContent = formatPhone(data.phone);
+          document.getElementById('donePhone').textContent = formatPhone(data.phone);
           document.getElementById('btnLogout').style.display = '';
+          { const cl = isBookingClosed();
+            document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
+            document.getElementById('btnCancelBooking').style.display  = cl ? 'none' : '';
+            document.querySelector('#pageDone .btn-phone-edit').style.display = ''; }
           saveCheckSession();
-          showPage('checkDone');
+          showPage('done');
           btn.disabled = false; btn.textContent = '예매 확인';
           return;
         }
@@ -1293,14 +1277,18 @@
             adminCheckEmail      = normalizedEmail;
             adminCheckSuffix     = suffix;
             adminSeatAuthMode    = 'direct';
-            document.getElementById('checkDoneSeats').textContent =
+            document.getElementById('doneSeats').textContent =
               adminReservedSeatIds.map(formatSeatLabel).join(', ');
             adminCheckPhone = adminReservedInfo?.phone || '';
-            document.getElementById('checkDonePhone').textContent =
+            document.getElementById('donePhone').textContent =
               adminReservedInfo?.phone ? formatPhone(adminReservedInfo.phone) : '—';
             document.getElementById('btnLogout').style.display = '';
+            { const cl = isBookingClosed();
+              document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
+              document.getElementById('btnCancelBooking').style.display  = cl ? 'none' : '';
+              document.querySelector('#pageDone .btn-phone-edit').style.display = ''; }
             saveCheckSession();
-            showPage('checkDone');
+            showPage('done');
             btn.disabled = false; btn.textContent = '예매 확인';
             return;
           }
@@ -1373,7 +1361,7 @@
           if (!res.ok) { showToast('수정 중 오류가 발생했습니다.'); return; }
           adminCheckPhone  = phone;
           adminCheckSuffix = phone.replace(/\D/g, '').slice(-4);
-          document.getElementById('checkDonePhone').textContent = formatPhone(phone);
+          document.getElementById('donePhone').textContent = formatPhone(phone);
           saveCheckSession();
         } else {
           // Firebase 인증 경로: Firestore 직접 업데이트
@@ -1604,7 +1592,7 @@
 
     // ── 유틸 ──
     function showPage(name) {
-      const map = { loading:'pageLoading', preOpen:'pagePreOpen', bookingClosed:'pageBookingClosed', adminBlocked:'pageAdminBlocked', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone', checkDone:'pageCheckDone' };
+      const map = { loading:'pageLoading', preOpen:'pagePreOpen', bookingClosed:'pageBookingClosed', adminBlocked:'pageAdminBlocked', email:'pageEmail', emailSent:'pageEmailSent', phone:'pagePhone', seat:'pageSeat', done:'pageDone' };
       const next = document.getElementById(map[name]);
       const current = document.querySelector('.page.active');
       if (current && current !== next) {
@@ -1617,8 +1605,8 @@
         next.classList.add('active');
       }
       document.getElementById('navStep').textContent =
-        name === 'seat' ? '좌석 선택' : name === 'done' ? '' : name === 'checkDone' ? '' : name === 'phone' ? '전화번호' : name === 'loading' ? '' : name === 'bookingClosed' ? '' : '이메일 인증';
-      const authPages = ['loading', 'email', 'emailSent', 'phone', 'checkDone', 'bookingClosed'];
+        name === 'seat' ? '좌석 선택' : name === 'phone' ? '전화번호' : '';
+      const authPages = ['loading', 'email', 'emailSent', 'phone', 'bookingClosed'];
       const hbg = document.getElementById('bookHamburger');
       if (authPages.includes(name)) hbg.style.display = 'none';
       else hbg.style.removeProperty('display');
