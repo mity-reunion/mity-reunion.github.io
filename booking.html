@@ -668,6 +668,7 @@
               adminReservedInfo    = s.adminReservedInfo || null;
               document.getElementById('doneSeats').textContent = s.seatsText || '';
               document.getElementById('donePhone').textContent = s.phoneText || '';
+              document.getElementById('navUser').textContent = adminCheckEmail;
               document.getElementById('btnLogout').style.display = '';
               const closed = isBookingClosed();
               document.getElementById('btnSeatView').style.display    = closed ? 'none' : '';
@@ -1244,6 +1245,7 @@
               : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
           adminCheckPhone = data.phone || '';
           document.getElementById('donePhone').textContent = formatPhone(data.phone);
+          document.getElementById('navUser').textContent = adminCheckEmail;
           document.getElementById('btnLogout').style.display = '';
           { const cl = isBookingClosed();
             document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
@@ -1282,6 +1284,7 @@
             adminCheckPhone = adminReservedInfo?.phone || '';
             document.getElementById('donePhone').textContent =
               adminReservedInfo?.phone ? formatPhone(adminReservedInfo.phone) : '—';
+            document.getElementById('navUser').textContent = adminCheckEmail;
             document.getElementById('btnLogout').style.display = '';
             { const cl = isBookingClosed();
               document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
