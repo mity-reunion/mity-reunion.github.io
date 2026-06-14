@@ -565,6 +565,15 @@
       return `${id.split('-')[0]}열 ${id.split('-')[1]}번`;
     }
 
+    function sortSeats(ids) {
+      return [...ids].sort((a, b) => {
+        const [ar, an] = a.split('-');
+        const [br, bn] = b.split('-');
+        if (ar !== br) return ar < br ? -1 : 1;
+        return parseInt(an) - parseInt(bn);
+      });
+    }
+
     // ── 예매 오픈 / 마감 시각 ──
     const BOOKING_OPEN  = new Date('2026-06-17T19:00:00+09:00').getTime();
     const BOOKING_CLOSE = new Date('2026-07-11T00:00:00+09:00').getTime();
@@ -861,7 +870,7 @@
       currentBookingRef   = null;
       currentBookingSeats = [];
       document.getElementById('doneSeats').textContent =
-        adminReservedSeatIds.map(formatSeatLabel).join(', ');
+        sortSeats(adminReservedSeatIds).map(formatSeatLabel).join(', ');
       document.getElementById('donePhone').textContent =
         adminReservedInfo?.phone ? formatPhone(adminReservedInfo.phone) : '—';
       document.querySelector('#pageDone .btn-phone-edit').style.display = 'none';
@@ -902,7 +911,7 @@
       currentBookingRef = booking.ref;
       currentBookingSeats = booking.seats || [];
       document.getElementById('doneSeats').textContent =
-        currentBookingSeats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+        sortSeats(currentBookingSeats).map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
       document.getElementById('donePhone').textContent = currentUser.phone ? formatPhone(currentUser.phone) : '—';
       const closed = isBookingClosed();
       document.getElementById('btnCancelBooking').style.display = closed ? 'none' : '';
@@ -1076,7 +1085,7 @@
           sessionStorage.removeItem('seat_change_session');
           if (adminSeatAuthMode === 'direct') {
             document.getElementById('doneSeats').textContent =
-              adminReservedSeatIds.map(formatSeatLabel).join(', ');
+              sortSeats(adminReservedSeatIds).map(formatSeatLabel).join(', ');
             const cl = isBookingClosed();
             document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
             document.getElementById('btnCancelBooking').style.display  = cl ? 'none' : '';
@@ -1130,7 +1139,7 @@
         resetSeatPageUI();
         sessionStorage.removeItem('seat_change_session');
         document.getElementById('doneSeats').textContent =
-          data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          sortSeats(data.seats).map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
         if (adminSeatAuthMode === 'direct') {
           const cl = isBookingClosed();
           document.getElementById('btnSeatView').style.display      = cl ? 'none' : '';
@@ -1244,7 +1253,7 @@
           adminCheckSuffix     = suffix;
           adminSeatAuthMode    = 'direct';
           document.getElementById('doneSeats').textContent =
-            data.seats.map(id => id.includes('WC')
+            sortSeats(data.seats).map(id => id.includes('WC')
               ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}`
               : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
           adminCheckPhone = data.phone || '';
@@ -1284,7 +1293,7 @@
             adminCheckSuffix     = suffix;
             adminSeatAuthMode    = 'direct';
             document.getElementById('doneSeats').textContent =
-              adminReservedSeatIds.map(formatSeatLabel).join(', ');
+              sortSeats(adminReservedSeatIds).map(formatSeatLabel).join(', ');
             adminCheckPhone = adminReservedInfo?.phone || '';
             document.getElementById('donePhone').textContent =
               adminReservedInfo?.phone ? formatPhone(adminReservedInfo.phone) : '—';
@@ -1523,7 +1532,7 @@
       if (selected.size === 0) {
         container.innerHTML = '<p class="sidebar-empty">선택된 좌석이 없습니다</p>';
       } else {
-        container.innerHTML = [...selected].map(id => {
+        container.innerHTML = sortSeats([...selected]).map(id => {
           const lbl = id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`;
           return `<div class="sidebar-seat-item"><span>${lbl}</span><button class="remove-btn" onclick="removeSeat('${id}')">×</button></div>`;
         }).join('');
@@ -1581,7 +1590,7 @@
         currentBookingSeats = data.seats;
 
         document.getElementById('doneSeats').textContent =
-          data.seats.map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
+          sortSeats(data.seats).map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ');
         document.getElementById('donePhone').textContent = currentUser.phone ? formatPhone(currentUser.phone) : '—';
         document.getElementById('btnCancelBooking').style.display = '';
         const _peb = document.querySelector('#pageDone .btn-phone-edit');
