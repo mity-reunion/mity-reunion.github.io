@@ -644,6 +644,10 @@
         if (user) {
           const tokenResult = await user.getIdTokenResult();
           if (tokenResult.claims.admin) { showPage('adminBlocked'); return; }
+          document.getElementById('navUser').textContent = user.email;
+          document.getElementById('navUserMobile').textContent = user.email;
+          document.getElementById('btnLogout').style.display = '';
+          document.getElementById('btnLogoutMobile').style.display = '';
           const saved = sessionStorage.getItem('booking_user');
           if (saved) {
             currentUser = JSON.parse(saved);
