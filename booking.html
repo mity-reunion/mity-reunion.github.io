@@ -679,7 +679,11 @@
               currentBookingSeats  = s.bookingSeats || [];
               adminReservedSeatIds = s.adminReservedSeatIds || [];
               adminReservedInfo    = s.adminReservedInfo || null;
-              document.getElementById('doneSeats').textContent = s.seatsText || '';
+              document.getElementById('doneSeats').textContent =
+                adminReservedSeatIds.length
+                  ? sortSeats(adminReservedSeatIds).map(formatSeatLabel).join(', ')
+                  : sortSeats(currentBookingSeats).map(id => id.includes('WC') ? `${id.split('-')[0]}열 휠체어 ${id.replace(/[^0-9]/g,'')}` : `${id.split('-')[0]}열 ${id.split('-')[1]}번`).join(', ')
+                  || s.seatsText || '';
               document.getElementById('donePhone').textContent = s.phoneText || '';
               document.getElementById('navUser').textContent = adminCheckEmail;
               document.getElementById('btnLogout').style.display = '';
