@@ -388,6 +388,15 @@
     return `${id.split('-')[0]}열 ${id.split('-')[1]}번`;
   }
 
+  function sortSeats(ids) {
+    return [...ids].sort((a, b) => {
+      const [ar, an] = a.split('-');
+      const [br, bn] = b.split('-');
+      if (ar !== br) return ar < br ? -1 : 1;
+      return parseInt(an) - parseInt(bn);
+    });
+  }
+
   function selectSeat(id) {
     if (selectedId) {
       const prev = document.querySelector(`[data-id="${selectedId}"]`);
@@ -408,7 +417,7 @@
       html += `
         <div class="info-row"><span class="info-key">이메일</span><span class="info-val">${esc(booking.email) || '-'}</span></div>
         <div class="info-row"><span class="info-key">전화번호</span><span class="info-val">${fmtPhone(booking.phone)}</span></div>
-        <div class="info-row"><span class="info-key">예매 좌석</span><span class="info-val">${(booking.seats||[]).map(seatLabel).join(', ')}</span></div>
+        <div class="info-row"><span class="info-key">예매 좌석</span><span class="info-val">${sortSeats(booking.seats||[]).map(seatLabel).join(', ')}</span></div>
         <div class="info-row"><span class="info-key">예매일시</span><span class="info-val">${fmtDate(booking.createdAt)}</span></div>
         <label class="checkin-row">
           <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleCheckin('${esc(id)}', this.checked)"/>
