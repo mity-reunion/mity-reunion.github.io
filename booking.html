@@ -700,10 +700,14 @@
               sessionStorage.removeItem('check_session');
             }
           }
-          showPage('email');
-          if (isBookingClosed()) {
-            document.getElementById('tabBook').style.display = 'none';
-            setAuthMode('check');
+          if (Date.now() < BOOKING_OPEN) {
+            startPreOpenCountdown();
+          } else {
+            showPage('email');
+            if (isBookingClosed()) {
+              document.getElementById('tabBook').style.display = 'none';
+              setAuthMode('check');
+            }
           }
         }
       });
@@ -859,6 +863,7 @@
       if (existing) { showExistingBooking(existing); return; }
 
       if (isBookingClosed()) { showPage('bookingClosed'); return; }
+      if (Date.now() < BOOKING_OPEN) { startPreOpenCountdown(); return; }
       showPage('seat');
       buildSeats();
     }
