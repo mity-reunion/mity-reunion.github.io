@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Preview — 예매 오픈 전후 화면</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --black:#000; --white:#fff; --red:#cc2200; --border:rgba(255,255,255,0.25); --muted:rgba(255,255,255,0.65); }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Noto Sans KR',sans-serif; background:#111; color:#fff; min-height:100vh; }
+
+    .preview-header {
+      padding:20px 32px; background:rgba(255,255,200,0.07);
+      border-bottom:1px solid rgba(255,255,200,0.15);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .preview-label { font-size:0.7rem; letter-spacing:0.2em; color:rgba(255,255,150,0.7); font-weight:700; }
+    .preview-desc  { font-size:0.72rem; color:rgba(255,255,255,0.35); letter-spacing:0.05em; }
+
+    .preview-grid {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:1px; background:rgba(255,255,255,0.08);
+    }
+    @media(max-width:700px){ .preview-grid{ grid-template-columns:1fr; } }
+
+    .preview-card {
+      background:#000; display:flex; flex-direction:column; align-items:center;
+      padding:80px 20px 60px; min-height:100vh; position:relative;
+    }
+    .screen-label {
+      width:100%; text-align:center; padding:14px 0 0;
+      font-size:0.62rem; letter-spacing:0.18em; color:rgba(255,255,150,0.45);
+    }
+
+    /* NAV mock */
+    .mock-nav {
+      width:100%; display:flex; justify-content:space-between; align-items:center;
+      padding:0 0 32px; max-width:440px;
+    }
+    .nav-logo { font-weight:900; font-size:0.9rem; letter-spacing:0.2em; color:#fff; }
+    .nav-step { font-size:0.68rem; color:var(--muted); letter-spacing:0.15em; }
+
+    /* preOpen box */
+    .preopen-box {
+      display:flex; flex-direction:column; align-items:center;
+      gap:20px; text-align:center; width:min(380px,90vw);
+    }
+    .preopen-sub { font-size:0.72rem; letter-spacing:0.2em; color:var(--muted); }
+    .countdown-wrap { display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .countdown-label { font-size:0.9rem; letter-spacing:0.25em; color:rgba(255,255,255,0.9); }
+    .countdown-sub   { font-size:0.7rem; letter-spacing:0.25em; color:rgba(255,255,255,0.5); }
+    .countdown-digits { display:flex; gap:6px; align-items:flex-end; }
+    .cd-unit { display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .cd-num  { font-size:clamp(1.8rem,4.5vw,2.4rem); font-weight:900; letter-spacing:-0.03em; line-height:1; min-width:2ch; text-align:center; }
+    .cd-lbl  { font-size:0.56rem; letter-spacing:0.2em; color:rgba(255,255,255,0.4); }
+    .cd-sep  { font-size:clamp(1.5rem,4vw,2rem); font-weight:900; padding-bottom:6px; color:rgba(255,255,255,0.25); line-height:1; }
+    .btn-home {
+      margin-top:4px; padding:10px 28px; background:none; color:var(--muted);
+      border:1px solid rgba(255,255,255,0.2); border-radius:4px;
+      font-family:inherit; font-size:0.8rem; cursor:pointer; text-decoration:none;
+      display:inline-block;
+    }
+
+    /* email page */
+    .auth-box { width:min(400px,90vw); display:flex; flex-direction:column; align-items:stretch; }
+    .auth-tabs { display:flex; width:100%; margin-bottom:28px; border-bottom:1px solid var(--border); }
+    .auth-tab {
+      flex:1; background:none; border:none; border-bottom:2px solid transparent;
+      margin-bottom:-1px; padding:10px; font-family:inherit; font-size:0.8rem;
+      font-weight:700; letter-spacing:0.12em; color:var(--muted); cursor:pointer;
+    }
+    .auth-tab.active { color:#fff; border-bottom-color:#fff; }
+    .auth-title { font-size:clamp(1.6rem,5vw,2.2rem); font-weight:900; letter-spacing:-0.02em; margin-bottom:8px; text-align:center; }
+    .auth-sub   { font-size:0.82rem; color:var(--muted); letter-spacing:0.05em; margin-bottom:36px; text-align:center; }
+    .input-field {
+      width:100%; padding:14px 16px; margin-bottom:12px;
+      background:rgba(255,255,255,0.06); border:1px solid var(--border);
+      border-radius:4px; color:#fff; font-family:inherit; font-size:0.95rem; outline:none;
+    }
+    .input-field::placeholder { color:rgba(255,255,255,0.35); }
+    .btn-primary {
+      width:100%; padding:14px; border:none; border-radius:4px;
+      background:#fff; color:#000; font-family:inherit; font-size:0.95rem;
+      font-weight:900; cursor:pointer; letter-spacing:0.06em;
+      box-shadow:3px 3px 0 var(--red);
+    }
+  </style>
+</head>
+<body>
+
+<div class="preview-header">
+  <span class="preview-label">⚠ PREVIEW — 예매 오픈 전후 화면 비교</span>
+  <span class="preview-desc">6월 17일 19:00 KST 기준</span>
+</div>
+
+<div class="preview-grid">
+
+  <!-- 오픈 전 -->
+  <div class="preview-card">
+    <p class="screen-label">① 오픈 전 — 비로그인 접속 (또는 예매 이력 없는 로그인)</p>
+    <div style="height:48px"></div>
+    <div class="mock-nav">
+      <span class="nav-logo">M.I.T.Y REUNION</span>
+    </div>
+    <div class="preopen-box">
+      <p class="preopen-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+      <div class="countdown-wrap">
+        <p class="countdown-label">예매 오픈: 6월 17일 19시</p>
+        <p class="countdown-sub">오픈까지 남은 시간</p>
+        <div class="countdown-digits">
+          <div class="cd-unit"><span class="cd-num">02</span><span class="cd-lbl">DAY</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num">14</span><span class="cd-lbl">HOUR</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num">23</span><span class="cd-lbl">MIN</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num">07</span><span class="cd-lbl">SEC</span></div>
+        </div>
+      </div>
+      <a href="#" class="btn-home">← 공연 소개</a>
+    </div>
+  </div>
+
+  <!-- 오픈 후 -->
+  <div class="preview-card">
+    <p class="screen-label">② 오픈 후 — 비로그인 접속</p>
+    <div style="height:48px"></div>
+    <div class="mock-nav">
+      <span class="nav-logo">M.I.T.Y REUNION</span>
+      <span class="nav-step">이메일 인증</span>
+    </div>
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button class="auth-tab active">예매하기</button>
+        <button class="auth-tab">예매확인</button>
+      </div>
+      <h1 class="auth-title">예매하기</h1>
+      <p class="auth-sub">M.I.T.Y REUNION · 07.11 SAT 2PM</p>
+      <input type="email" class="input-field" placeholder="이메일 주소" readonly/>
+      <button class="btn-primary">인증 메일 받기</button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
