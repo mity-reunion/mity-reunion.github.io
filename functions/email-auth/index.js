@@ -16,8 +16,8 @@ const BREVO_API_KEY = process.env.BREVO_SMTP_KEY;
 const SENDER_EMAIL = process.env.BREVO_USER || 'mityreunion@gmail.com';
 
 const MAX_SEATS = 2;
-// 유효한 좌석 ID 패턴: A-1~G-16, H-1~K-12, L-WC1, L-WC2, L-1, L-2
-const VALID_SEAT_RE = /^([A-G]-([1-9]|1[0-6])|[H-K]-([1-9]|1[0-2])|L-(WC[12]|[12]))$/;
+// 유효한 좌석 ID 패턴: A-1~G-16, H-1~K-12, L-WC1, L-WC2, L-3, L-4
+const VALID_SEAT_RE = /^([A-G]-([1-9]|1[0-6])|[H-K]-([1-9]|1[0-2])|L-(WC[12]|[34]))$/;
 
 function setCors(res) {
   res.set('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
