@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Preview — index.html 오픈 전후 화면</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --black:#000; --white:#fff; --red:#cc2200; --border:rgba(255,255,255,0.25); --muted:rgba(255,255,255,0.65); }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Noto Sans KR',sans-serif; background:#111; color:#fff; min-height:100vh; }
+
+    .preview-header {
+      padding:20px 32px; background:rgba(255,255,200,0.07);
+      border-bottom:1px solid rgba(255,255,200,0.15);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .preview-label { font-size:0.7rem; letter-spacing:0.2em; color:rgba(255,255,150,0.7); font-weight:700; }
+    .preview-desc  { font-size:0.72rem; color:rgba(255,255,255,0.35); letter-spacing:0.05em; }
+
+    .preview-grid {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:1px; background:rgba(255,255,255,0.08);
+    }
+    @media(max-width:700px){ .preview-grid{ grid-template-columns:1fr; } }
+
+    .preview-card {
+      background:#000; display:flex; flex-direction:column; align-items:center;
+      padding:0 20px 60px; min-height:100vh; position:relative;
+    }
+    .screen-label {
+      width:100%; text-align:center; padding:14px 0;
+      font-size:0.62rem; letter-spacing:0.18em; color:rgba(255,255,150,0.45);
+    }
+
+    /* NAV mock */
+    .mock-nav {
+      position:sticky; top:0; width:100%; display:flex; justify-content:space-between; align-items:center;
+      padding:22px 0; z-index:10; mix-blend-mode:difference;
+    }
+    .nav-logo { font-weight:900; font-size:0.9rem; letter-spacing:0.2em; color:#fff; }
+    .nav-links { display:flex; gap:20px; list-style:none; }
+    .nav-links a { color:#fff; text-decoration:none; font-size:0.72rem; letter-spacing:0.12em; font-weight:500; opacity:0.75; }
+    .nav-booking { font-weight:700; opacity:1 !important; }
+
+    /* hero */
+    .hero-inner {
+      display:flex; flex-direction:column; align-items:center;
+      padding-top:16px; padding-bottom:24px; width:100%;
+    }
+    .poster-wrap { width:min(280px,80%); }
+    .poster-wrap img { width:100%; display:block; }
+
+    /* countdown */
+    .countdown-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:16px; }
+    .countdown-label { font-size:0.9rem; letter-spacing:0.25em; color:rgba(255,255,255,0.9); }
+    .countdown-sub   { font-size:0.7rem; letter-spacing:0.25em; color:rgba(255,255,255,0.5); }
+    .countdown-digits { display:flex; gap:6px; align-items:flex-end; }
+    .cd-unit { display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .cd-num  { font-size:clamp(1.6rem,4vw,2.2rem); font-weight:900; letter-spacing:-0.03em; line-height:1; min-width:2ch; text-align:center; }
+    .cd-lbl  { font-size:0.52rem; letter-spacing:0.2em; color:rgba(255,255,255,0.4); }
+    .cd-sep  { font-size:clamp(1.3rem,3.5vw,1.8rem); font-weight:900; padding-bottom:4px; color:rgba(255,255,255,0.25); line-height:1; }
+
+    /* 예매하기 button */
+    .btn-reserve {
+      display:inline-block; margin-top:16px; padding:11px 36px;
+      background:#fff; color:#000;
+      font-family:'Noto Sans KR',sans-serif; font-weight:900;
+      font-size:clamp(0.9rem,2.2vw,1.1rem); letter-spacing:0.22em;
+      text-decoration:none; cursor:pointer;
+      box-shadow:3px 3px 0 var(--red);
+    }
+    .btn-reserve.closed { opacity:0.45; pointer-events:none; }
+
+    /* scroll hint */
+    .scroll-hint {
+      display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:16px; opacity:0.5;
+    }
+    .scroll-hint span { font-size:0.7rem; letter-spacing:0.2em; }
+    .scroll-hint svg  { width:20px; }
+
+    /* ticker */
+    .ticker-wrap {
+      overflow:hidden; border-top:1px solid rgba(255,255,255,0.1);
+      border-bottom:1px solid rgba(255,255,255,0.1); padding:12px 0; width:100%;
+    }
+    .ticker { display:flex; white-space:nowrap; animation:ticker 20s linear infinite; gap:24px; }
+    .ticker-item { font-weight:700; font-size:0.75rem; letter-spacing:0.15em; color:rgba(255,255,255,0.25); display:inline-flex; align-items:center; gap:24px; }
+    .ticker-item .dot { color:var(--red); font-size:0.55rem; }
+    @keyframes ticker { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+
+    /* about teaser */
+    .about-teaser {
+      width:100%; padding:40px 0 0; display:flex; flex-direction:column; gap:12px;
+    }
+    .section-label-sm { font-size:0.62rem; letter-spacing:0.4em; color:rgba(255,255,255,0.3); text-transform:uppercase; }
+    .section-title-sm { font-weight:900; font-size:1.6rem; line-height:1; letter-spacing:-0.02em; position:relative; display:inline-block; }
+    .section-title-sm::after { content:''; position:absolute; left:0; bottom:-6px; width:32px; height:2px; background:#fff; }
+    .meta-row-sm { display:flex; gap:16px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.08); align-items:baseline; }
+    .meta-key-sm { font-size:0.62rem; letter-spacing:0.2em; color:rgba(255,255,255,0.35); min-width:52px; text-transform:uppercase; }
+    .meta-val-sm { font-weight:700; font-size:0.88rem; }
+
+    /* fade-out for below-fold content */
+    .fade-out-bottom {
+      position:relative;
+    }
+    .fade-out-bottom::after {
+      content:''; position:absolute; bottom:0; left:0; right:0; height:120px;
+      background:linear-gradient(transparent, #000); pointer-events:none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="preview-header">
+  <span class="preview-label">⚠ PREVIEW — index.html 오픈 전후 화면 비교</span>
+  <span class="preview-desc">6월 17일 19:00 KST 기준</span>
+</div>
+
+<div class="preview-grid">
+
+  <!-- 오픈 전 -->
+  <div class="preview-card">
+    <p class="screen-label">① 오픈 전 — 카운트다운 표시, 예매 링크 없음</p>
+
+    <div class="mock-nav">
+      <span class="nav-logo">M.I.T.Y REUNION</span>
+      <ul class="nav-links">
+        <li><a href="#">공연소개</a></li>
+        <li><a href="#">공연진 소개</a></li>
+        <li><a href="#">공연 순서</a></li>
+        <!-- navBooking hidden -->
+      </ul>
+    </div>
+
+    <div class="hero-inner">
+      <div class="poster-wrap">
+        <img src="images/포스터.png" alt="M.I.T.Y REUNION 포스터"/>
+      </div>
+
+      <!-- countdown -->
+      <div class="countdown-wrap">
+        <p class="countdown-label">예매 오픈: 6월 17일 19시</p>
+        <p class="countdown-sub">오픈 까지 남은 시간</p>
+        <div class="countdown-digits">
+          <div class="cd-unit"><span class="cd-num">02</span><span class="cd-lbl">DAY</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num">14</span><span class="cd-lbl">HOUR</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num">23</span><span class="cd-lbl">MIN</span></div>
+          <span class="cd-sep">:</span>
+          <div class="cd-unit"><span class="cd-num">07</span><span class="cd-lbl">SEC</span></div>
+        </div>
+      </div>
+
+      <div class="scroll-hint">
+        <span>SCROLL</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="ticker-wrap">
+      <div class="ticker">
+        <span class="ticker-item">M.I.T.Y REUNION <span class="dot">●</span> 07.11 SAT 2PM <span class="dot">●</span> 서교스퀘어 <span class="dot">●</span></span>
+        <span class="ticker-item">M.I.T.Y REUNION <span class="dot">●</span> 07.11 SAT 2PM <span class="dot">●</span> 서교스퀘어 <span class="dot">●</span></span>
+        <span class="ticker-item">M.I.T.Y REUNION <span class="dot">●</span> 07.11 SAT 2PM <span class="dot">●</span> 서교스퀘어 <span class="dot">●</span></span>
+        <span class="ticker-item">M.I.T.Y REUNION <span class="dot">●</span> 07.11 SAT 2PM <span class="dot">●</span> 서교스퀘어 <span class="dot">●</span></span>
+      </div>
+    </div>
+
+    <div class="about-teaser fade-out-bottom">
+      <p class="section-label-sm">About</p>
+      <h2 class="section-title-sm" style="margin-bottom:14px;">공연 소개</h2>
+      <div class="meta-row-sm"><span class="meta-key-sm">일시</span><span class="meta-val-sm">2026년 7월 11일 (토) 오후 2시</span></div>
+      <div class="meta-row-sm"><span class="meta-key-sm">장소</span><span class="meta-val-sm">서교스퀘어 공연장</span></div>
+      <div class="meta-row-sm"><span class="meta-key-sm">연령</span><span class="meta-val-sm">17세 관람가</span></div>
+      <div class="meta-row-sm"><span class="meta-key-sm">러닝타임</span><span class="meta-val-sm">110분 (인터미션 10분 포함)</span></div>
+    </div>
+  </div>
+
+  <!-- 오픈 후 -->
+  <div class="preview-card">
+    <p class="screen-label">② 오픈 후 — 예매하기 버튼 + 상단 예매확인 링크 표시</p>
+
+    <div class="mock-nav">
+      <span class="nav-logo">M.I.T.Y REUNION</span>
+      <ul class="nav-links">
+        <li><a href="#">공연소개</a></li>
+        <li><a href="#">공연진 소개</a></li>
+        <li><a href="#">공연 순서</a></li>
+        <li><a href="#" class="nav-booking">예매확인</a></li>
+      </ul>
+    </div>
+
+    <div class="hero-inner">
+      <div class="poster-wrap">
+        <img src="images/포스터.png" alt="M.I.T.Y REUNION 포스터"/>
+      </div>
+
+      <!-- 예매하기 button -->
+      <a href="#" class="btn-reserve">예매하기</a>
+
+      <div class="scroll-hint">
+        <span>SCROLL</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="ticker-wrap">
+      <div class="ticker">
+        <span class="ticker-item">M.I.T.Y REUNION <span class="dot">●</span> 07.11 SAT 2PM <span class="dot">●</span> 서교스퀘어 <span class="dot">●</span></span>
+        <span class="ticker-item">M.I.T.Y REUNION <span class="dot">●</span> 07.11 SAT 2PM <span class="dot">●</span> 서교스퀘어 <span class="dot">●</span></span>
+        <span class="ticker-item">M.I.T.Y REUNION <span class="dot">●</span> 07.11 SAT 2PM <span class="dot">●</span> 서교스퀘어 <span class="dot">●</span></span>
+        <span class="ticker-item">M.I.T.Y REUNION <span class="dot">●</span> 07.11 SAT 2PM <span class="dot">●</span> 서교스퀘어 <span class="dot">●</span></span>
+      </div>
+    </div>
+
+    <div class="about-teaser fade-out-bottom">
+      <p class="section-label-sm">About</p>
+      <h2 class="section-title-sm" style="margin-bottom:14px;">공연 소개</h2>
+      <div class="meta-row-sm"><span class="meta-key-sm">일시</span><span class="meta-val-sm">2026년 7월 11일 (토) 오후 2시</span></div>
+      <div class="meta-row-sm"><span class="meta-key-sm">장소</span><span class="meta-val-sm">서교스퀘어 공연장</span></div>
+      <div class="meta-row-sm"><span class="meta-key-sm">연령</span><span class="meta-val-sm">17세 관람가</span></div>
+      <div class="meta-row-sm"><span class="meta-key-sm">러닝타임</span><span class="meta-val-sm">110분 (인터미션 10분 포함)</span></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
