@@ -13,6 +13,7 @@
       --border: rgba(255,255,255,0.12);
       --muted: rgba(255,255,255,0.55);
       --dim: rgba(255,255,255,0.25);
+      --hl: #fbbf24;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -27,186 +28,171 @@
     .nav-logo { font-weight: 900; font-size: 1rem; letter-spacing: 0.2em; color: var(--white); text-decoration: none; white-space: nowrap; }
     .nav-back { font-size: 0.78rem; letter-spacing: 0.1em; color: var(--muted); text-decoration: none; transition: color 0.2s; }
     .nav-back:hover { color: var(--white); }
+    @media (max-width: 520px) { nav { padding: 20px; } }
 
     /* ── HERO ── */
-    .guide-hero {
-      padding: 140px 40px 60px;
-      max-width: 800px; margin: 0 auto; text-align: center;
-    }
+    .guide-hero { padding: 140px 40px 60px; max-width: 860px; margin: 0 auto; text-align: center; }
     .guide-label { font-size: 0.68rem; letter-spacing: 0.4em; color: var(--dim); text-transform: uppercase; margin-bottom: 16px; }
     .guide-title { font-weight: 900; font-size: clamp(2rem, 6vw, 3.2rem); letter-spacing: -0.02em; margin-bottom: 16px; line-height: 1.1; }
     .guide-sub { font-size: 0.88rem; color: var(--muted); line-height: 1.9; }
     .open-badge {
       display: inline-block; margin-top: 24px;
       padding: 10px 24px; border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 100px; font-size: 0.8rem; letter-spacing: 0.15em; color: var(--white);
+      border-radius: 100px; font-size: 0.8rem; letter-spacing: 0.1em; color: rgba(255,255,255,0.7);
     }
-    .open-badge span { color: #fbbf24; font-weight: 700; }
+    .open-badge .hl { color: var(--hl); font-weight: 700; }
 
-    /* ── STEPS WRAPPER ── */
-    .steps { max-width: 860px; margin: 0 auto; padding: 0 24px 100px; }
+    /* ── STEPS ── */
+    .steps { max-width: 960px; margin: 0 auto; padding: 0 32px 100px; }
 
     .step {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 40px; align-items: start;
-      padding: 56px 0; border-top: 1px solid var(--border);
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 48px; align-items: start;
+      padding: 64px 0; border-top: 1px solid var(--border);
     }
     .step:first-child { border-top: none; }
-    @media (max-width: 680px) {
-      .step { grid-template-columns: 1fr; gap: 28px; }
-      .step-mock { order: -1; }
+    @media (max-width: 740px) {
+      .step { grid-template-columns: 1fr; gap: 32px; }
+      .step-mock { display: flex; justify-content: center; }
+    }
+    @media (max-width: 520px) {
+      .steps { padding: 0 20px 80px; }
+      .guide-hero { padding: 120px 20px 48px; }
     }
 
     /* step meta */
-    .step-meta { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+    .step-meta { display: flex; flex-direction: column; gap: 14px; padding-top: 6px; }
     .step-num {
       font-size: 0.6rem; letter-spacing: 0.35em; color: var(--dim); text-transform: uppercase;
       display: flex; align-items: center; gap: 10px;
     }
-    .step-num::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-    .step-title { font-weight: 900; font-size: 1.35rem; letter-spacing: -0.01em; line-height: 1.3; }
-    .step-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.85; }
-    .step-notes { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
-    .note {
-      display: flex; gap: 8px; align-items: flex-start;
-      font-size: 0.78rem; color: rgba(255,255,255,0.5); line-height: 1.7;
-    }
-    .note::before { content: '—'; flex-shrink: 0; color: var(--dim); margin-top: 1px; }
-    .note.warn { color: #fbbf24; }
-    .note.warn::before { color: #fbbf24; }
+    .step-num::after { content: ''; flex: 1; height: 1px; background: var(--border); max-width: 60px; }
+    .step-title { font-weight: 900; font-size: 1.4rem; letter-spacing: -0.01em; line-height: 1.3; }
+    .step-desc { font-size: 0.86rem; color: var(--muted); line-height: 1.9; }
+    .step-notes { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .note { font-size: 0.8rem; color: rgba(255,255,255,0.45); line-height: 1.8; padding-left: 12px; position: relative; }
+    .note::before { content: '·'; position: absolute; left: 0; color: var(--dim); }
+    .hl { color: var(--hl); font-weight: 700; }
 
-    /* ── PHONE MOCKUP ── */
-    .step-mock { display: flex; justify-content: center; }
+    /* ── PHONE FRAME ── */
+    .phone-wrap { width: 280px; flex-shrink: 0; }
     .phone {
-      width: min(220px, 80vw);
+      width: 280px;
       background: #0a0a0a;
-      border: 1.5px solid rgba(255,255,255,0.18);
-      border-radius: 28px;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      border-radius: 36px;
       overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 20px 60px rgba(0,0,0,0.6);
-      position: relative;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 24px 64px rgba(0,0,0,0.7);
     }
-    .phone-notch {
-      height: 28px; background: #0a0a0a;
+    .phone-top {
+      height: 32px; background: #0a0a0a;
       display: flex; align-items: center; justify-content: center;
     }
-    .phone-notch-bar {
-      width: 60px; height: 5px; background: #222; border-radius: 4px;
-    }
+    .phone-notch { width: 72px; height: 6px; background: #1a1a1a; border-radius: 4px; }
     .phone-screen {
-      background: #000; padding: 14px 14px 20px; min-height: 320px;
+      background: #000;
+      padding: 18px 18px 24px;
       display: flex; flex-direction: column; align-items: center;
     }
 
-    /* — screen internals — */
+    /* ── SCREEN INTERNALS ── */
+    /* shared nav bar */
     .ps-nav {
       width: 100%; display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
     }
-    .ps-logo { font-weight: 900; font-size: 0.55rem; letter-spacing: 0.18em; color: #fff; }
-    .ps-step-lbl { font-size: 0.45rem; color: var(--muted); letter-spacing: 0.1em; }
-    .ps-tabs { display: flex; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 14px; }
-    .ps-tab {
-      flex: 1; text-align: center; font-size: 0.55rem; padding: 5px 0; font-weight: 700;
-      letter-spacing: 0.1em; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;
-    }
+    .ps-logo { font-weight: 900; font-size: 0.6rem; letter-spacing: 0.18em; color: #fff; }
+    .ps-step-lbl { font-size: 0.5rem; color: var(--muted); letter-spacing: 0.1em; }
+
+    /* tabs */
+    .ps-tabs { display: flex; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 16px; flex-shrink: 0; }
+    .ps-tab { flex: 1; text-align: center; font-size: 0.58rem; padding: 6px 0; font-weight: 700; letter-spacing: 0.1em; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
     .ps-tab.active { color: #fff; border-bottom-color: #fff; }
-    .ps-h1 { font-weight: 900; font-size: 1rem; letter-spacing: -0.02em; margin-bottom: 4px; text-align: center; }
-    .ps-sub { font-size: 0.45rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 14px; text-align: center; }
+
+    /* titles */
+    .ps-h1 { font-weight: 900; font-size: 1.1rem; letter-spacing: -0.02em; margin-bottom: 4px; text-align: center; width: 100%; }
+    .ps-sub { font-size: 0.5rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 16px; text-align: center; width: 100%; }
+
+    /* inputs & buttons */
     .ps-input {
-      width: 100%; padding: 7px 9px; margin-bottom: 7px;
+      width: 100%; padding: 9px 11px; margin-bottom: 8px;
       background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 4px; color: rgba(255,255,255,0.4); font-size: 0.5rem; font-family: inherit;
+      border-radius: 4px; color: rgba(255,255,255,0.35); font-size: 0.56rem; font-family: inherit; outline: none;
     }
-    .ps-input.filled { color: #fff; }
+    .ps-input.filled { color: #fff; background: rgba(255,255,255,0.08); }
     .ps-btn {
-      width: 100%; padding: 7px; border: none; border-radius: 4px;
-      background: #fff; color: #000; font-family: inherit; font-size: 0.55rem;
+      width: 100%; padding: 9px; border: none; border-radius: 4px;
+      background: #fff; color: #000; font-family: inherit; font-size: 0.6rem;
       font-weight: 900; letter-spacing: 0.08em; box-shadow: 2px 2px 0 var(--red);
     }
-    .ps-btn.ghost {
-      background: none; color: var(--muted); border: 1px solid rgba(255,255,255,0.2);
-      box-shadow: none; margin-top: 6px;
+    .ps-btn-ghost {
+      width: 100%; padding: 8px; border: 1px solid rgba(255,255,255,0.18); border-radius: 4px;
+      background: none; color: var(--muted); font-family: inherit; font-size: 0.56rem; font-weight: 700; margin-top: 6px;
     }
-    .ps-notice {
-      width: 100%; text-align: center; padding: 14px 10px;
-    }
-    .ps-notice-icon { font-size: 1.4rem; margin-bottom: 6px; }
-    .ps-notice-title { font-weight: 900; font-size: 0.65rem; margin-bottom: 4px; }
-    .ps-notice-sub { font-size: 0.45rem; color: var(--muted); line-height: 1.7; }
-    .ps-notice-email { font-size: 0.5rem; color: rgba(255,255,255,0.8); margin-top: 6px; font-weight: 700; }
 
-    /* seat map mock */
-    .ps-seat-section { width: 100%; }
-    .ps-seat-label { font-size: 0.38rem; letter-spacing: 0.15em; color: var(--dim); margin-bottom: 4px; text-align: center; }
-    .ps-seat-stage {
-      width: 100%; padding: 3px 0; background: rgba(255,255,255,0.05);
-      border-radius: 3px; font-size: 0.38rem; color: var(--dim);
-      text-align: center; letter-spacing: 0.1em; margin-bottom: 6px;
-    }
-    .ps-seat-rows { display: flex; flex-direction: column; gap: 2px; align-items: center; }
-    .ps-seat-row { display: flex; gap: 2px; align-items: center; }
-    .ps-seat-row-lbl { font-size: 0.3rem; color: var(--dim); width: 7px; text-align: right; margin-right: 1px; }
-    .ps { width: 9px; height: 9px; border-radius: 2px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
-    .ps.sel { background: #fff; }
-    .ps.res { background: rgba(204,34,0,0.4); }
-    .ps.gap { background: transparent; }
-    .ps-aisle { width: 5px; }
-    .ps-btn-sm { padding: 5px; border-radius: 3px; background: #fff; color: #000; font-size: 0.45rem; font-weight: 900; border: none; font-family: inherit; box-shadow: 1px 1px 0 var(--red); margin-top: 8px; width: 100%; }
+    /* email notice */
+    .ps-sent-icon { font-size: 1.8rem; margin-bottom: 8px; }
+    .ps-sent-title { font-weight: 900; font-size: 0.75rem; margin-bottom: 4px; text-align: center; }
+    .ps-sent-sub { font-size: 0.5rem; color: var(--muted); line-height: 1.7; text-align: center; }
+    .ps-sent-addr { font-size: 0.55rem; font-weight: 700; color: rgba(255,255,255,0.85); margin-top: 8px; text-align: center; }
 
-    /* done screen */
-    .ps-done-title { font-weight: 900; font-size: 0.75rem; margin-bottom: 10px; letter-spacing: 0.05em; text-align: center; }
-    .ps-done-rows { width: 100%; display: flex; flex-direction: column; gap: 1px; }
-    .ps-done-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.07);
-      font-size: 0.45rem;
-    }
-    .ps-done-key { color: var(--muted); }
-    .ps-done-val { color: #fff; font-weight: 700; }
-    .ps-done-actions { display: flex; gap: 4px; margin-top: 10px; width: 100%; }
-    .ps-done-btn { flex: 1; padding: 5px; border-radius: 3px; font-size: 0.42rem; font-weight: 700; font-family: inherit; cursor: default; border: 1px solid rgba(255,255,255,0.2); background: none; color: var(--muted); }
-    .ps-done-btn.red { border-color: rgba(204,34,0,0.5); color: #f87171; }
-
-    /* email mock */
+    /* email client mock */
     .ps-email-box {
-      width: 100%; background: #0f0f0f; border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 6px; padding: 10px;
+      width: 100%; background: #0f0f0f; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 12px;
     }
-    .ps-email-from { font-size: 0.4rem; color: var(--dim); margin-bottom: 2px; }
-    .ps-email-subj { font-size: 0.5rem; font-weight: 700; margin-bottom: 8px; }
-    .ps-email-body { font-size: 0.4rem; color: var(--muted); line-height: 1.7; margin-bottom: 8px; }
-    .ps-email-btn {
-      display: inline-block; padding: 5px 12px; background: #fff; color: #000;
-      font-size: 0.45rem; font-weight: 900; border-radius: 3px;
-      box-shadow: 1px 1px 0 var(--red);
+    .ps-email-from { font-size: 0.43rem; color: var(--dim); margin-bottom: 2px; }
+    .ps-email-subj { font-size: 0.55rem; font-weight: 700; margin-bottom: 10px; }
+    .ps-email-body { font-size: 0.45rem; color: var(--muted); line-height: 1.75; margin-bottom: 10px; }
+    .ps-email-cta {
+      display: inline-block; padding: 6px 16px; background: #fff; color: #000;
+      font-size: 0.5rem; font-weight: 900; border-radius: 4px; box-shadow: 2px 2px 0 var(--red);
     }
-    .ps-email-note { font-size: 0.38rem; color: var(--dim); margin-top: 6px; line-height: 1.6; }
+    .ps-email-note { font-size: 0.4rem; color: var(--dim); margin-top: 8px; line-height: 1.65; }
 
     /* index hero mock */
-    .ps-poster-placeholder {
-      width: 80px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
-      aspect-ratio: 2/3; border-radius: 4px; margin-bottom: 12px;
-      display: flex; align-items: center; justify-content: center;
+    .ps-poster { width: 88px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); aspect-ratio: 2/3; border-radius: 4px; margin-bottom: 14px; overflow: hidden; }
+    .ps-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ps-index-btn { padding: 8px 28px; background: #fff; color: #000; font-size: 0.62rem; font-weight: 900; letter-spacing: 0.18em; box-shadow: 2px 2px 0 var(--red); border: none; font-family: inherit; }
+
+    /* ── SEAT MAP ── */
+    .ps-seat-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .ps-seat-tabs { display: flex; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 8px; }
+    .ps-seat-tab { flex: 1; text-align: center; font-size: 0.52rem; padding: 5px 0; font-weight: 700; letter-spacing: 0.08em; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .ps-seat-tab.active { color: #fff; border-bottom-color: #fff; }
+    .ps-stage { width: 80%; padding: 3px 0; background: rgba(255,255,255,0.05); border-radius: 3px; font-size: 0.4rem; color: var(--dim); text-align: center; letter-spacing: 0.15em; margin-bottom: 6px; }
+    .ps-rows { display: flex; flex-direction: column; gap: 2px; }
+    .ps-row { display: flex; gap: 2px; align-items: center; }
+    .ps-rl { font-size: 0.32rem; color: var(--dim); width: 8px; text-align: right; margin-right: 2px; flex-shrink: 0; }
+    .s { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; background: rgba(255,255,255,0.12); }
+    .s.r { background: rgba(204,34,0,0.5); }   /* reserved */
+    .s.sel { background: #fff; }                 /* selected */
+    .s.wc { background: rgba(56,189,248,0.25); border: 1px solid rgba(56,189,248,0.5); }
+    .ps-aisle { width: 6px; flex-shrink: 0; }
+    .ps-spacer-l { width: 72px; flex-shrink: 0; } /* 6seats*10 + 5gaps*2 + aisle6 = 72 */
+    .ps-legend { display: flex; gap: 8px; margin-top: 6px; }
+    .ps-leg-item { display: flex; align-items: center; gap: 3px; font-size: 0.36rem; color: var(--muted); }
+    .ps-leg-dot { width: 7px; height: 7px; border-radius: 1px; flex-shrink: 0; }
+    .ps-book-btn {
+      width: 100%; margin-top: 10px; padding: 8px; border: none; border-radius: 4px;
+      background: #fff; color: #000; font-family: inherit; font-size: 0.55rem;
+      font-weight: 900; box-shadow: 2px 2px 0 var(--red);
     }
-    .ps-poster-placeholder img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-    .ps-index-btn {
-      padding: 7px 22px; background: #fff; color: #000;
-      font-size: 0.55rem; font-weight: 900; letter-spacing: 0.15em;
-      box-shadow: 2px 2px 0 var(--red); border: none; font-family: inherit;
-    }
+
+    /* done screen */
+    .ps-done-title { font-weight: 900; font-size: 0.82rem; margin-bottom: 12px; text-align: center; letter-spacing: 0.03em; width: 100%; }
+    .ps-done-table { width: 100%; display: flex; flex-direction: column; }
+    .ps-done-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.5rem; }
+    .ps-done-key { color: var(--muted); }
+    .ps-done-val { color: #fff; font-weight: 700; text-align: right; }
+    .ps-done-btns { display: flex; gap: 6px; margin-top: 12px; width: 100%; }
+    .ps-done-btn { flex: 1; padding: 7px; border-radius: 4px; font-size: 0.48rem; font-weight: 700; font-family: inherit; border: 1px solid rgba(255,255,255,0.2); background: none; color: var(--muted); }
+    .ps-done-btn.red { border-color: rgba(204,34,0,0.5); color: #f87171; }
 
     /* ── FOOTER ── */
-    footer {
-      text-align: center; padding: 40px 20px 60px; border-top: 1px solid var(--border);
-    }
+    footer { text-align: center; padding: 40px 20px 60px; border-top: 1px solid var(--border); }
     .footer-logo { font-weight: 900; font-size: 1.2rem; letter-spacing: 0.1em; margin-bottom: 8px; }
     .footer-info { font-size: 0.7rem; color: var(--muted); line-height: 1.8; }
-
-    @media (max-width: 520px) {
-      nav { padding: 20px; }
-      .guide-hero { padding: 120px 20px 50px; }
-    }
   </style>
 </head>
 <body>
@@ -219,60 +205,60 @@
 <div class="guide-hero">
   <p class="guide-label">Booking Guide</p>
   <h1 class="guide-title">예매 안내</h1>
-  <p class="guide-sub">
-    M.I.T.Y REUNION 예매는 이메일 인증 방식으로 진행됩니다.<br>
-    아래 단계에 따라 좌석을 선택하고 예매를 완료하세요.
-  </p>
-  <div class="open-badge">예매 오픈 <span>6월 17일 (화) 19:00</span> — 예매 마감 <span>7월 11일 (토) 00:00</span></div>
+  <p class="guide-sub">M.I.T.Y REUNION 예매는 이메일 인증 방식으로 진행됩니다.<br>아래 단계에 따라 좌석을 선택하고 예매를 완료하세요.</p>
+  <div class="open-badge">예매 오픈 <span class="hl">6월 17일 (화) 19:00</span> &nbsp;·&nbsp; 예매 마감 <span class="hl">7월 11일 (토) 00:00</span></div>
 </div>
 
 <div class="steps">
 
-  <!-- STEP 1 -->
+  <!-- ── STEP 1 ── -->
   <div class="step">
     <div class="step-meta">
       <p class="step-num">Step 01</p>
       <h2 class="step-title">예매 페이지<br>접속하기</h2>
-      <p class="step-desc">공연 소개 페이지 또는 상단 네비게이션의 <strong>예매하기</strong> 버튼을 클릭해 예매 페이지로 이동합니다.</p>
+      <p class="step-desc">공연 소개 페이지 하단의 <strong>예매하기</strong> 버튼 또는 상단 메뉴의 예매하기 버튼을 클릭해 예매 페이지로 이동합니다.</p>
       <div class="step-notes">
-        <p class="note">예매는 <strong>6월 17일 (화) 19:00</strong> 이후부터 가능합니다. 오픈 전에는 카운트다운 화면이 표시됩니다.</p>
-        <p class="note">예매 마감은 <strong>7월 11일 (토) 00:00</strong>입니다. 마감 이후에는 예매 및 취소가 불가합니다.</p>
-        <p class="note">이미 예매하신 분은 <strong>예매확인</strong> 탭을 이용하세요.</p>
+        <p class="note">예매는 <span class="hl">6월 17일 (화) 19:00</span> 이후부터 가능합니다. 오픈 전에 접속하면 카운트다운 화면이 표시됩니다.</p>
+        <p class="note">예매 마감은 <span class="hl">7월 11일 (토) 00:00</span>이며, 이후에는 예매 및 취소가 불가합니다.</p>
+        <p class="note">이미 예매하신 분은 예매하기 대신 <span class="hl">예매확인</span> 탭을 이용하세요.</p>
       </div>
     </div>
-    <div class="step-mock">
+    <div class="step-mock phone-wrap">
       <div class="phone">
-        <div class="phone-notch"><div class="phone-notch-bar"></div></div>
-        <div class="phone-screen" style="align-items:center;justify-content:center;">
-          <div class="ps-nav" style="position:absolute;top:28px;left:14px;right:14px;margin:0;">
+        <div class="phone-top"><div class="phone-notch"></div></div>
+        <div class="phone-screen" style="align-items:center;padding-top:14px;">
+          <div class="ps-nav">
             <span class="ps-logo">M.I.T.Y REUNION</span>
+            <span style="font-size:0.45rem;color:var(--muted);"></span>
           </div>
-          <div style="margin-top:24px;display:flex;flex-direction:column;align-items:center;">
-            <div class="ps-poster-placeholder">
-              <img src="images/포스터.png" alt="포스터" />
-            </div>
-            <button class="ps-index-btn">예매하기</button>
+          <div class="ps-poster">
+            <img src="images/포스터.png" alt="포스터" />
+          </div>
+          <button class="ps-index-btn">예매하기</button>
+          <div style="margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:0.4;">
+            <span style="font-size:0.45rem;letter-spacing:0.2em;">SCROLL</span>
+            <svg width="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- STEP 2 -->
+  <!-- ── STEP 2 ── -->
   <div class="step">
     <div class="step-meta">
       <p class="step-num">Step 02</p>
       <h2 class="step-title">이메일 주소<br>입력하기</h2>
       <p class="step-desc">예매에 사용할 이메일 주소를 입력하고 <strong>인증 메일 받기</strong> 버튼을 클릭합니다.</p>
       <div class="step-notes">
-        <p class="note">정확한 이메일 주소를 입력하세요. 이후 좌석 변경·취소 시에도 동일한 이메일을 사용합니다.</p>
-        <p class="note">이미 예매한 경우 <strong>예매확인</strong> 탭에서 예매자 이메일과 전화번호 끝 4자리를 입력하면 예매내역을 확인할 수 있습니다.</p>
-        <p class="note warn">1인당 최대 <strong>2매</strong>까지 예매 가능합니다.</p>
+        <p class="note">정확한 이메일 주소를 입력하세요. 이후 좌석 변경·취소 시에도 동일한 이메일이 사용됩니다.</p>
+        <p class="note"><span class="hl">1인당 최대 2매</span>까지 예매 가능합니다.</p>
+        <p class="note">이미 예매한 경우, <span class="hl">예매확인</span> 탭에서 이메일과 전화번호 끝 4자리를 입력하면 예매내역을 확인할 수 있습니다.</p>
       </div>
     </div>
-    <div class="step-mock">
+    <div class="step-mock phone-wrap">
       <div class="phone">
-        <div class="phone-notch"><div class="phone-notch-bar"></div></div>
+        <div class="phone-top"><div class="phone-notch"></div></div>
         <div class="phone-screen">
           <div class="ps-nav">
             <span class="ps-logo">M.I.T.Y REUNION</span>
@@ -291,160 +277,184 @@
     </div>
   </div>
 
-  <!-- STEP 3 -->
+  <!-- ── STEP 3 ── -->
   <div class="step">
     <div class="step-meta">
       <p class="step-num">Step 03</p>
       <h2 class="step-title">메일함에서<br>인증 링크 클릭</h2>
-      <p class="step-desc">입력한 이메일로 발송된 인증 메일을 열고 <strong>인증하기</strong> 버튼을 클릭합니다.</p>
+      <p class="step-desc">입력한 이메일로 발송된 인증 메일을 열고 <strong>인증하기</strong> 버튼을 클릭합니다. 클릭하면 예매 페이지로 자동 이동됩니다.</p>
       <div class="step-notes">
-        <p class="note">인증 링크는 발송 후 <strong>1시간</strong> 동안 유효합니다. 만료 시 이메일을 다시 입력해 재발송하세요.</p>
-        <p class="note">메일이 오지 않는 경우 <strong>스팸/정크 메일함</strong>을 확인해주세요.</p>
-        <p class="note">인증 링크는 모바일에서 클릭하면 예매 페이지로 자동 이동됩니다.</p>
+        <p class="note">인증 링크는 발송 후 <span class="hl">1시간</span>만 유효합니다. 만료된 경우 예매 페이지에서 이메일을 다시 입력해 재발송하세요.</p>
+        <p class="note">메일이 보이지 않는다면 <span class="hl">스팸/정크 메일함</span>을 확인해주세요.</p>
+        <p class="note">발신 주소는 mityreunion@gmail.com이며, 링크 클릭 후 예매 페이지로 바로 이동됩니다.</p>
       </div>
     </div>
-    <div class="step-mock">
+    <div class="step-mock phone-wrap">
       <div class="phone">
-        <div class="phone-notch"><div class="phone-notch-bar"></div></div>
+        <div class="phone-top"><div class="phone-notch"></div></div>
         <div class="phone-screen" style="justify-content:center;">
           <div class="ps-email-box">
             <p class="ps-email-from">발신: mityreunion@gmail.com</p>
             <p class="ps-email-subj">M.I.T.Y — 로그인</p>
-            <p class="ps-email-body">아래 버튼을 클릭하면 예매 페이지로 이동합니다.<br>링크는 1시간 동안 유효합니다.</p>
-            <span class="ps-email-btn">인증하기</span>
-            <p class="ps-email-note">본인이 요청하지 않은 경우 이 메일을 무시하세요.</p>
+            <p class="ps-email-body">아래 버튼을 클릭하면 예매 페이지로 이동합니다. 링크는 1시간 동안 유효합니다.</p>
+            <span class="ps-email-cta">인증하기</span>
+            <p class="ps-email-note">본인이 요청하지 않은 경우 이 메일을 무시하세요.<br>수집된 개인정보는 공연 종료 후 즉시 폐기됩니다.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- STEP 4 -->
+  <!-- ── STEP 4 ── -->
   <div class="step">
     <div class="step-meta">
       <p class="step-num">Step 04</p>
       <h2 class="step-title">전화번호<br>입력하기</h2>
-      <p class="step-desc">인증 후 본인 확인에 사용할 전화번호를 입력합니다. 예매내역 확인 및 티켓 수령 시 필요합니다.</p>
+      <p class="step-desc">인증 후 본인 확인에 사용할 전화번호를 입력합니다.</p>
       <div class="step-notes">
-        <p class="note warn">정확한 전화번호를 입력하세요. 이후 예매확인 탭에서 전화번호 끝 4자리로 본인 확인합니다.</p>
-        <p class="note">전화번호는 예매 완료 후에도 수정 가능합니다.</p>
-        <p class="note">티켓 수령 시 현장에서 신분증과 함께 예매 확인 화면을 제시해야 합니다.</p>
+        <p class="note"><span class="hl">정확한 전화번호</span>를 입력하세요. 예매확인 탭에서 전화번호 끝 4자리로 본인 확인하며, 티켓 수령 시에도 사용됩니다.</p>
+        <p class="note">전화번호는 예매 완료 후에도 예매내역 화면에서 <span class="hl">수정 가능</span>합니다.</p>
+        <p class="note">현장 티켓 수령 시 신분증과 예매 확인 화면을 함께 제시해야 합니다.</p>
       </div>
     </div>
-    <div class="step-mock">
+    <div class="step-mock phone-wrap">
       <div class="phone">
-        <div class="phone-notch"><div class="phone-notch-bar"></div></div>
+        <div class="phone-top"><div class="phone-notch"></div></div>
         <div class="phone-screen">
           <div class="ps-nav">
             <span class="ps-logo">M.I.T.Y REUNION</span>
             <span class="ps-step-lbl">전화번호 확인</span>
           </div>
-          <p class="ps-h1" style="margin-top:8px;">전화번호 입력</p>
-          <p class="ps-sub">예매자 본인 확인에 사용됩니다</p>
-          <input class="ps-input filled" value="010-0000-0000" readonly />
-          <button class="ps-btn">확인</button>
-          <p style="font-size:0.4rem;color:var(--muted);text-align:center;margin-top:10px;line-height:1.7;">
-            입력한 전화번호는 예매 확인 및<br>현장 수령 시에만 사용됩니다.
-          </p>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding: 8px 0 16px;">
+            <p class="ps-h1">전화번호 입력</p>
+            <p class="ps-sub">예매자 본인 확인에 사용됩니다</p>
+            <input class="ps-input filled" value="010-0000-0000" readonly />
+            <button class="ps-btn">확인</button>
+            <p style="font-size:0.45rem;color:var(--muted);text-align:center;margin-top:12px;line-height:1.75;">입력한 전화번호는 예매 확인 및<br>현장 수령 시에만 사용됩니다.</p>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- STEP 5 -->
+  <!-- ── STEP 5 ── -->
   <div class="step">
     <div class="step-meta">
       <p class="step-num">Step 05</p>
       <h2 class="step-title">좌석 선택하기</h2>
       <p class="step-desc">좌석 배치도에서 원하는 좌석을 선택하고 <strong>예매하기</strong> 버튼을 눌러 예매를 완료합니다.</p>
       <div class="step-notes">
-        <p class="note warn">1인당 최대 <strong>2석</strong>까지 선택 가능합니다.</p>
-        <p class="note">빨간색 좌석은 이미 예매 완료된 좌석입니다. 선택할 수 없습니다.</p>
-        <p class="note">좌석 선택 후 예매 완료 전까지는 확정되지 않습니다. 반드시 <strong>예매하기</strong> 버튼을 클릭하세요.</p>
-        <p class="note">좌석은 B2F (A~G열)와 B1F (H~L열)로 구분됩니다. 상단 탭으로 층을 전환할 수 있습니다.</p>
+        <p class="note"><span class="hl">1인당 최대 2석</span>까지 선택할 수 있습니다. 빨간색으로 표시된 좌석은 이미 예매 완료된 좌석입니다.</p>
+        <p class="note">좌석 선택 후 <span class="hl">반드시 예매하기 버튼</span>을 클릭해야 예매가 확정됩니다. 버튼 클릭 전에는 좌석이 확보되지 않습니다.</p>
+        <p class="note">좌석은 <span class="hl">B2F (A~G열)</span>와 <span class="hl">B1F (H~L열)</span>로 구분되며, 상단 탭으로 층을 전환할 수 있습니다.</p>
+        <p class="note">L열 끝 두 자리(<span class="hl">L-WC1, L-WC2</span>)는 휠체어석입니다.</p>
       </div>
     </div>
-    <div class="step-mock">
+    <div class="step-mock phone-wrap">
       <div class="phone">
-        <div class="phone-notch"><div class="phone-notch-bar"></div></div>
-        <div class="phone-screen" style="padding-bottom:14px;">
+        <div class="phone-top"><div class="phone-notch"></div></div>
+        <div class="phone-screen" style="padding-bottom:18px;">
           <div class="ps-nav">
             <span class="ps-logo">M.I.T.Y REUNION</span>
             <span class="ps-step-lbl">좌석 선택</span>
           </div>
-          <div class="ps-seat-section">
-            <div class="ps-seat-stage">STAGE</div>
-            <div class="ps-seat-rows">
-              <!-- A row -->
-              <div class="ps-seat-row">
-                <span class="ps-seat-row-lbl">A</span>
-                <div class="ps"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps"></div>
+          <div class="ps-seat-wrap">
+            <div class="ps-seat-tabs">
+              <div class="ps-seat-tab active">B2F</div>
+              <div class="ps-seat-tab">B1F</div>
+            </div>
+            <div class="ps-stage">STAGE</div>
+            <div class="ps-rows">
+              <!-- A row: 16 seats, 2 reserved -->
+              <div class="ps-row">
+                <span class="ps-rl">A</span>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div>
                 <div class="ps-aisle"></div>
-                <div class="ps"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps"></div>
+                <div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
               </div>
-              <!-- B row -->
-              <div class="ps-seat-row">
-                <span class="ps-seat-row-lbl">B</span>
-                <div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div>
+              <!-- B row: mostly reserved -->
+              <div class="ps-row">
+                <span class="ps-rl">B</span>
+                <div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div>
                 <div class="ps-aisle"></div>
-                <div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div>
+                <div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div>
               </div>
-              <!-- C row -->
-              <div class="ps-seat-row">
-                <span class="ps-seat-row-lbl">C</span>
-                <div class="ps"></div><div class="ps"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps sel"></div><div class="ps sel"></div>
+              <!-- C row: some reserved, 2 selected -->
+              <div class="ps-row">
+                <span class="ps-rl">C</span>
+                <div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s sel"></div><div class="s sel"></div>
                 <div class="ps-aisle"></div>
-                <div class="ps"></div><div class="ps"></div><div class="ps"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps res"></div><div class="ps"></div>
+                <div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
               </div>
               <!-- D row -->
-              <div class="ps-seat-row">
-                <span class="ps-seat-row-lbl">D</span>
-                <div class="ps"></div><div class="ps"></div><div class="ps"></div><div class="ps"></div><div class="ps res"></div><div class="ps res"></div><div class="ps"></div><div class="ps"></div>
+              <div class="ps-row">
+                <span class="ps-rl">D</span>
+                <div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div>
                 <div class="ps-aisle"></div>
-                <div class="ps"></div><div class="ps"></div><div class="ps"></div><div class="ps"></div><div class="ps"></div><div class="ps res"></div><div class="ps"></div><div class="ps"></div>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div>
+              </div>
+              <!-- E row -->
+              <div class="ps-row">
+                <span class="ps-rl">E</span>
+                <div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+                <div class="ps-aisle"></div>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div>
+              </div>
+              <!-- F row -->
+              <div class="ps-row">
+                <span class="ps-rl">F</span>
+                <div class="s r"></div><div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+                <div class="ps-aisle"></div>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div><div class="s r"></div>
+              </div>
+              <!-- G row -->
+              <div class="ps-row">
+                <span class="ps-rl">G</span>
+                <div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+                <div class="ps-aisle"></div>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div>
               </div>
             </div>
-            <div style="display:flex;gap:6px;margin-top:7px;justify-content:center;">
-              <div style="display:flex;align-items:center;gap:2px;"><div class="ps sel" style="width:7px;height:7px;"></div><span style="font-size:0.35rem;color:var(--muted);">선택</span></div>
-              <div style="display:flex;align-items:center;gap:2px;"><div class="ps res" style="width:7px;height:7px;"></div><span style="font-size:0.35rem;color:var(--muted);">예매됨</span></div>
-              <div style="display:flex;align-items:center;gap:2px;"><div class="ps" style="width:7px;height:7px;"></div><span style="font-size:0.35rem;color:var(--muted);">선택가능</span></div>
+            <div class="ps-legend">
+              <div class="ps-leg-item"><div class="ps-leg-dot sel" style="background:#fff;"></div>선택</div>
+              <div class="ps-leg-item"><div class="ps-leg-dot r" style="background:rgba(204,34,0,0.5);"></div>예매됨</div>
+              <div class="ps-leg-item"><div class="ps-leg-dot" style="background:rgba(255,255,255,0.12);"></div>선택가능</div>
             </div>
-            <button class="ps-btn-sm">C열 7번, C열 8번 예매하기</button>
+            <button class="ps-book-btn">C열 7번, C열 8번 예매하기</button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- STEP 6 -->
+  <!-- ── STEP 6 ── -->
   <div class="step">
     <div class="step-meta">
       <p class="step-num">Step 06</p>
       <h2 class="step-title">예매내역 확인</h2>
       <p class="step-desc">예매가 완료되면 예매내역 화면이 표시됩니다. 좌석 변경 및 취소도 이 화면에서 가능합니다.</p>
       <div class="step-notes">
-        <p class="note">공연 당일 현장 티켓 부스에서 이 화면과 신분증을 제시하면 티켓을 받을 수 있습니다.</p>
-        <p class="note">예매내역은 언제든 <strong>예매확인</strong> 탭에서 이메일 + 전화번호 끝 4자리로 다시 확인할 수 있습니다.</p>
-        <p class="note warn">좌석 변경 및 취소는 <strong>7월 11일 (토) 00:00</strong> 이전까지만 가능합니다.</p>
-        <p class="note">변경 시 기존 좌석은 자동으로 해제되며, 취소 후 재예매 시 동일 좌석이 보장되지 않습니다.</p>
+        <p class="note">공연 당일 현장 티켓 부스에서 <span class="hl">이 화면과 신분증</span>을 제시하면 티켓을 받을 수 있습니다.</p>
+        <p class="note">예매내역은 언제든 예매확인 탭에서 <span class="hl">이메일 + 전화번호 끝 4자리</span>로 다시 확인할 수 있습니다.</p>
+        <p class="note">좌석 변경 및 취소는 <span class="hl">7월 11일 (토) 00:00</span> 이전까지만 가능합니다. 취소 후 재예매 시 동일 좌석은 보장되지 않습니다.</p>
       </div>
     </div>
-    <div class="step-mock">
+    <div class="step-mock phone-wrap">
       <div class="phone">
-        <div class="phone-notch"><div class="phone-notch-bar"></div></div>
+        <div class="phone-top"><div class="phone-notch"></div></div>
         <div class="phone-screen">
           <div class="ps-nav">
             <span class="ps-logo">M.I.T.Y REUNION</span>
           </div>
           <p class="ps-done-title">예매내역</p>
-          <div class="ps-done-rows">
+          <div class="ps-done-table">
             <div class="ps-done-row">
               <span class="ps-done-key">예매 좌석</span>
               <span class="ps-done-val">C열 7번, C열 8번</span>
             </div>
             <div class="ps-done-row">
               <span class="ps-done-key">전화번호</span>
-              <span class="ps-done-val">010-0000-0000</span>
+              <span class="ps-done-val">010-0000-0000 <span style="font-size:0.42rem;color:var(--muted);font-weight:400;">수정</span></span>
             </div>
             <div class="ps-done-row">
               <span class="ps-done-key">공연 일시</span>
@@ -455,7 +465,7 @@
               <span class="ps-done-val">서교스퀘어</span>
             </div>
           </div>
-          <div class="ps-done-actions">
+          <div class="ps-done-btns">
             <button class="ps-done-btn">좌석 변경</button>
             <button class="ps-done-btn red">취소하기</button>
           </div>
@@ -464,7 +474,7 @@
     </div>
   </div>
 
-</div>
+</div><!-- /steps -->
 
 <footer>
   <div class="footer-logo">M.I.T.Y</div>
