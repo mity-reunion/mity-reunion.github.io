@@ -165,14 +165,16 @@
     }
 
     /* done screen */
-    .ps-done-title { font-weight: 900; font-size: 1rem; margin-bottom: 16px; text-align: center; letter-spacing: 0.03em; width: 100%; }
-    .ps-done-table { width: 100%; display: flex; flex-direction: column; }
-    .ps-done-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.62rem; }
-    .ps-done-key { color: var(--muted); }
-    .ps-done-val { color: #fff; font-weight: 700; text-align: right; }
-    .ps-done-btns { display: flex; gap: 8px; margin-top: 14px; width: 100%; }
-    .ps-done-btn { flex: 1; padding: 9px; border-radius: 4px; font-size: 0.58rem; font-weight: 700; font-family: inherit; border: 1px solid rgba(255,255,255,0.2); background: none; color: var(--muted); }
-    .ps-done-btn.red { border-color: rgba(204,34,0,0.5); color: #f87171; }
+    .ps-done-title { font-weight: 900; font-size: 1rem; margin-bottom: 10px; text-align: center; letter-spacing: 0.03em; width: 100%; }
+    .ps-notice-box { width: 100%; background: rgba(255,220,100,0.05); border: 1px solid rgba(255,220,100,0.22); border-radius: 6px; padding: 10px 12px; font-size: 0.48rem; color: rgba(255,255,255,0.72); line-height: 1.85; margin-bottom: 10px; }
+    .ps-done-table { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; display: flex; flex-direction: column; }
+    .ps-done-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.62rem; }
+    .ps-done-row:last-child { border-bottom: none; }
+    .ps-done-key { font-size: 0.5rem; letter-spacing: 0.08em; color: var(--muted); }
+    .ps-done-val { color: #fff; font-weight: 500; text-align: right; }
+    .ps-done-btns { display: flex; gap: 8px; margin-top: 10px; width: 100%; }
+    .ps-done-btn { flex: 1; padding: 8px; border-radius: 4px; font-size: 0.55rem; font-weight: 700; font-family: inherit; border: 1px solid rgba(255,255,255,0.2); background: none; color: var(--muted); }
+    .ps-done-btn.red { background: rgba(204,34,0,0.12); border-color: rgba(204,34,0,0.4); color: #ff6b6b; }
 
     /* ── FOOTER ── */
     footer { text-align: center; padding: 40px 20px 60px; border-top: 1px solid var(--border); }
@@ -423,6 +425,7 @@
         <div class="phone-top"><div class="phone-notch"></div></div>
         <div class="phone-screen">
           <p class="ps-done-title">예매내역</p>
+          <div class="ps-notice-box">공연은 별도의 대기 없이 정시에 시작하며, 공연 시작 후 도착하신 인원은 약 20분 후 지연입장 도와드릴 예정이니 최소 공연시작 10분 전까지 도착 부탁드립니다.</div>
           <div class="ps-done-table">
             <div class="ps-done-row">
               <span class="ps-done-key">예매 좌석</span>
@@ -430,15 +433,7 @@
             </div>
             <div class="ps-done-row">
               <span class="ps-done-key">전화번호</span>
-              <span class="ps-done-val">010-0000-0000 <span style="font-size:0.5rem;color:var(--muted);font-weight:400;">수정</span></span>
-            </div>
-            <div class="ps-done-row">
-              <span class="ps-done-key">공연 일시</span>
-              <span class="ps-done-val">07.11 SAT 2PM</span>
-            </div>
-            <div class="ps-done-row">
-              <span class="ps-done-key">장소</span>
-              <span class="ps-done-val">서교스퀘어</span>
+              <span class="ps-done-val">010-0000-0000 <span style="font-size:0.5rem;color:var(--muted);font-weight:400;border:1px solid rgba(255,255,255,0.22);border-radius:3px;padding:1px 5px;">수정</span></span>
             </div>
           </div>
           <div class="ps-done-btns">
