@@ -162,7 +162,7 @@ functions.http('cancelBooking', async (req, res) => {
 
   const db = admin.firestore();
   try {
-    await db.runTransaction(async (tx) => {
+    const { seatsToRelease, bookingEmail, bookingPhone } = await db.runTransaction(async (tx) => {
       const bookingRef = db.collection('bookings').doc(ref);
       const bookingSnap = await tx.get(bookingRef);
       if (!bookingSnap.exists) throw Object.assign(new Error(), { code: 'NOT_FOUND' });
@@ -181,7 +181,12 @@ functions.http('cancelBooking', async (req, res) => {
 
       tx.update(bookingRef, { status: 'cancelled' });
       tx.set(reservedRef, { list: currentReserved.filter(s => !seatsToRelease.includes(s)) });
+      return { seatsToRelease, bookingEmail: booking.email || '', bookingPhone: booking.phone || '' };
     });
+
+    await Promise.all(seatsToRelease.map(s => logSeatHistory(db, s, 'user_cancelled', {
+      by: bookingEmail, phone: bookingPhone, ref,
+    })));
 
     res.json({ success: true });
   } catch (e) {
@@ -213,7 +218,7 @@ functions.http('changeBooking', async (req, res) => {
 
   const db = admin.firestore();
   try {
-    await db.runTransaction(async (tx) => {
+    const { oldSeats, bookingEmail, bookingPhone } = await db.runTransaction(async (tx) => {
       const bookingRef = db.collection('bookings').doc(ref);
       const bookingSnap = await tx.get(bookingRef);
       if (!bookingSnap.exists) throw Object.assign(new Error(), { code: 'NOT_FOUND' });
@@ -237,7 +242,14 @@ functions.http('changeBooking', async (req, res) => {
 
       tx.update(bookingRef, { seats: newSeats, updatedAt: new Date().toISOString() });
       tx.set(reservedRef, { list: [...new Set([...reservedWithoutOwn, ...newSeats])] });
+      return { oldSeats, bookingEmail: booking.email || '', bookingPhone: booking.phone || '' };
     });
+
+    const histExtra = { by: bookingEmail, phone: bookingPhone, ref };
+    await Promise.all([
+      ...oldSeats.map(s => logSeatHistory(db, s, 'user_changed', { ...histExtra, newSeats })),
+      ...newSeats.map(s => logSeatHistory(db, s, 'user_changed', { ...histExtra, oldSeats })),
+    ]);
 
     res.json({ success: true, seats: newSeats });
   } catch (e) {
