@@ -154,8 +154,12 @@
     .ps-legend { display: flex; gap: 10px; margin-top: 8px; }
     .ps-leg-item { display: flex; align-items: center; gap: 4px; font-size: 0.45rem; color: var(--muted); }
     .ps-leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+    .ps-summary { width: 100%; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+    .ps-summary-title { font-size: 0.42rem; font-weight: 700; letter-spacing: 0.12em; color: var(--muted); }
+    .ps-summary-seat { font-size: 0.5rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+    .ps-remove { color: var(--muted); font-size: 0.55rem; }
     .ps-book-btn {
-      width: 100%; margin-top: 12px; padding: 10px; border: none; border-radius: 4px;
+      width: 100%; margin-top: 6px; padding: 10px; border: none; border-radius: 4px;
       background: #fff; color: #000; font-family: inherit; font-size: 0.68rem;
       font-weight: 900; box-shadow: 2px 2px 0 var(--red);
     }
@@ -389,7 +393,12 @@
               <div class="ps-leg-item"><div class="ps-leg-dot ps-leg-res"></div>예매 완료</div>
               <div class="ps-leg-item"><div class="ps-leg-dot" style="background:rgba(56,189,248,0.2);border:1px solid rgba(56,189,248,0.55);"></div>휠체어석</div>
             </div>
-            <button class="ps-book-btn">C열 7번, C열 8번 예매하기</button>
+            <div class="ps-summary">
+              <p class="ps-summary-title">선택한 좌석</p>
+              <div class="ps-summary-seat"><span>C열 7번</span><span class="ps-remove">×</span></div>
+              <div class="ps-summary-seat"><span>C열 8번</span><span class="ps-remove">×</span></div>
+              <button class="ps-book-btn">예매 확정</button>
+            </div>
           </div>
         </div>
       </div>
