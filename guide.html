@@ -138,10 +138,18 @@
     .ps-rows { display: flex; flex-direction: column; gap: 3px; }
     .ps-row { display: flex; gap: 2.5px; align-items: center; }
     .ps-rl { font-size: 0.38rem; color: var(--dim); width: 10px; text-align: right; margin-right: 2px; flex-shrink: 0; }
-    .s { width: 13px; height: 13px; border-radius: 2px; flex-shrink: 0; background: rgba(255,255,255,0.12); }
-    .s.r   { background: rgba(204,34,0,0.5); }
-    .s.sel { background: #fff; }
-    .s.wc  { background: rgba(56,189,248,0.25); border: 1px solid rgba(56,189,248,0.5); }
+    .s { width: 13px; height: 13px; border-radius: 2px; flex-shrink: 0; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.35); }
+    .s.r { background: transparent; border-color: rgba(255,255,255,0.25); position: relative; overflow: hidden; }
+    .s.r::before, .s.r::after { content: ''; position: absolute; inset: 0; margin: auto; width: 60%; height: 1px; background: rgba(255,255,255,0.45); }
+    .s.r::before { transform: rotate(45deg); }
+    .s.r::after { transform: rotate(-45deg); }
+    .s.sel { background: #fff; border-color: #fff; }
+    .s.wc  { background: rgba(56,189,248,0.2); border: 1px solid rgba(56,189,248,0.55); }
+    .ps-floor-label { font-size: 0.42rem; color: var(--muted); letter-spacing: 0.15em; margin: 4px 0 2px; }
+    .ps-leg-res { background: transparent !important; border: 1px solid rgba(255,255,255,0.25); position: relative; overflow: hidden; }
+    .ps-leg-res::before, .ps-leg-res::after { content: ''; position: absolute; inset: 0; margin: auto; width: 60%; height: 1px; background: rgba(255,255,255,0.45); }
+    .ps-leg-res::before { transform: rotate(45deg); }
+    .ps-leg-res::after { transform: rotate(-45deg); }
     .ps-aisle { width: 7px; flex-shrink: 0; }
     .ps-legend { display: flex; gap: 10px; margin-top: 8px; }
     .ps-leg-item { display: flex; align-items: center; gap: 4px; font-size: 0.45rem; color: var(--muted); }
@@ -308,11 +316,8 @@
         <div class="phone-top"><div class="phone-notch"></div></div>
         <div class="phone-screen" style="padding-bottom:20px;">
           <div class="ps-seat-wrap">
-            <div class="ps-seat-tabs">
-              <div class="ps-seat-tab active">B2F</div>
-              <div class="ps-seat-tab">B1F</div>
-            </div>
             <div class="ps-stage">STAGE</div>
+            <p class="ps-floor-label">B2F</p>
             <div class="ps-rows">
               <div class="ps-row"><span class="ps-rl">A</span>
                 <div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div>
@@ -350,10 +355,39 @@
                 <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div>
               </div>
             </div>
+            <p class="ps-floor-label" style="margin-top:6px;">B1F</p>
+            <div class="ps-rows">
+              <div class="ps-row"><span class="ps-rl">H</span>
+                <div class="s r"></div><div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+                <div class="ps-aisle"></div>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s r"></div>
+              </div>
+              <div class="ps-row"><span class="ps-rl">I</span>
+                <div class="s r"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+                <div class="ps-aisle"></div>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div>
+              </div>
+              <div class="ps-row"><span class="ps-rl">J</span>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+                <div class="ps-aisle"></div>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+              </div>
+              <div class="ps-row"><span class="ps-rl">K</span>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div><div class="s"></div>
+                <div class="ps-aisle"></div>
+                <div class="s"></div><div class="s"></div><div class="s"></div><div class="s r"></div><div class="s"></div><div class="s"></div>
+              </div>
+              <div class="ps-row"><span class="ps-rl">L</span>
+                <div style="width:90px;flex-shrink:0;"></div>
+                <div class="ps-aisle"></div>
+                <div class="s wc"></div><div class="s wc"></div><div class="s"></div><div class="s"></div>
+              </div>
+            </div>
             <div class="ps-legend">
-              <div class="ps-leg-item"><div class="ps-leg-dot" style="background:#fff;"></div>선택</div>
-              <div class="ps-leg-item"><div class="ps-leg-dot" style="background:rgba(204,34,0,0.5);"></div>예매됨</div>
-              <div class="ps-leg-item"><div class="ps-leg-dot" style="background:rgba(255,255,255,0.12);"></div>선택가능</div>
+              <div class="ps-leg-item"><div class="ps-leg-dot" style="background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.35);"></div>선택 가능</div>
+              <div class="ps-leg-item"><div class="ps-leg-dot" style="background:#fff;"></div>선택됨</div>
+              <div class="ps-leg-item"><div class="ps-leg-dot ps-leg-res"></div>예매 완료</div>
+              <div class="ps-leg-item"><div class="ps-leg-dot" style="background:rgba(56,189,248,0.2);border:1px solid rgba(56,189,248,0.55);"></div>휠체어석</div>
             </div>
             <button class="ps-book-btn">C열 7번, C열 8번 예매하기</button>
           </div>
