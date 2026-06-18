@@ -709,6 +709,8 @@
             if (isBookingClosed()) {
               document.getElementById('tabBook').style.display = 'none';
               setAuthMode('check');
+            } else if (new URLSearchParams(location.search).get('tab') === 'check') {
+              setAuthMode('check');
             }
           }
         }
