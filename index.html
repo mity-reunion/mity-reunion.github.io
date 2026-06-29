@@ -191,20 +191,46 @@
     .sl-cast-name:hover { color: #fff; }
     .setlist-logo-btn {
       width: 72px; height: 72px;
-      border: 0; background: none; padding: 0;
-      cursor: pointer; flex-shrink: 0;
-    }
-    .setlist-logo-btn:hover .setlist-logo { border-color: rgba(255,255,255,0.35); transform: translateY(-1px); }
-    .setlist-logo {
-      width: 72px; height: 72px;
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.1);
       border-radius: 14px;
+      padding: 5px;
+      cursor: pointer; flex-shrink: 0;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.05);
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+    .setlist-logo-btn:hover,
+    .setlist-logo-btn:focus-visible {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.16);
+      box-shadow: 0 14px 32px rgba(0,0,0,0.38), 0 0 0 2px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.1);
+      outline: none;
+    }
+    .setlist-logo-btn:active { transform: translateY(0); }
+    .setlist-logo-btn:hover .setlist-logo,
+    .setlist-logo-btn:focus-visible .setlist-logo {
+      transform: scale(1.03);
+    }
+    .setlist-logo {
+      width: 100%; height: 100%;
+      border-radius: 10px;
       object-fit: contain;
-      background: rgba(255,255,255,0.06);
-      padding: 6px;
-      border: 0.5px solid transparent;
+      background: rgba(0,0,0,0.18);
+      padding: 4px;
       flex-shrink: 0;
       display: block;
-      transition: border-color 0.2s, transform 0.15s;
+      transition: transform 0.18s ease;
+    }
+    @keyframes setlistTapHint {
+      0%, 72%, 100% { transform: translateY(0) scale(1); border-color: rgba(255,255,255,0.22); }
+      78% { transform: translateY(-3px) scale(1.03); border-color: rgba(255,255,255,0.58); }
+      84% { transform: translateY(0) scale(1); border-color: rgba(255,255,255,0.32); }
+      90% { transform: translateY(-2px) scale(1.02); border-color: rgba(255,255,255,0.5); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .setlist-logo-btn { animation: none; }
     }
     .setlist-text {
       font-size: 10px;
@@ -222,8 +248,11 @@
     }
 
     @media (max-width: 700px) {
-      .setlist-logo { width: 56px; height: 56px; border-radius: 10px; }
-      .setlist-logo-btn { width: 56px; height: 56px; }
+      .setlist-logo { width: 100%; height: 100%; border-radius: 8px; }
+      .setlist-logo-btn {
+        width: 56px; height: 56px; border-radius: 10px; padding: 4px;
+        animation: setlistTapHint 3.4s ease-in-out infinite;
+      }
       .setlist-text {
       font-size: 10px;
       color: rgba(255,255,255,0.35);
@@ -357,13 +386,13 @@
         <div class="setlist-vdivider"></div>
 
         <div class="setlist-show">
-          <img class="setlist-logo" src="images/1.png" alt="공연1">
+          <button class="setlist-logo-btn" onclick="openShowDescription('어햎')" aria-label="1번 공연 캐스팅 보기"><img class="setlist-logo" src="images/1.png" alt="공연1"></button>
           <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(0)">김상민</span> <span class="sl-cast-name" onclick="openCard(6)">오다현</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(1)">황건휘</span></div>
         </div>
         <div class="setlist-vdivider"></div>
 
         <div class="setlist-show">
-          <img class="setlist-logo" src="images/2.png" alt="공연2">
+          <button class="setlist-logo-btn" onclick="openShowDescription('레드북')" aria-label="2번 공연 캐스팅 보기"><img class="setlist-logo" src="images/2.png" alt="공연2"></button>
           <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(6)">오다현</span> <span class="sl-cast-name" onclick="openCard(10)">우정화</span> <span class="sl-cast-name" onclick="openCard(3)">유보경</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(1)">황건휘</span></div>
         </div>
         <div class="setlist-vdivider"></div>
@@ -390,7 +419,7 @@
         <div class="setlist-vdivider"></div>
 
         <div class="setlist-show">
-          <img class="setlist-logo" src="images/6.png" alt="공연6">
+          <button class="setlist-logo-btn" onclick="openShowDescription('넥스트투노멀')" aria-label="6번 공연 캐스팅 보기"><img class="setlist-logo" src="images/6.png" alt="공연6"></button>
           <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(0)">김상민</span> <span class="sl-cast-name" onclick="openCard(11)">김승희</span> <span class="sl-cast-name" onclick="openCard(5)">성현지</span> <span class="sl-cast-name" onclick="openCard(3)">유보경</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(7)">이정호</span> <span class="sl-cast-name" onclick="openCard(1)">황건휘</span></div>
         </div>
         <div class="setlist-vdivider"></div>
@@ -478,6 +507,10 @@
       max-height: min(760px, 86vh);
       overflow-y: auto;
       align-items: flex-start;
+      gap: 0.8rem;
+    }
+    .c-detail.show-detail.cast-only {
+      width: min(220px, 90vw);
     }
     @keyframes cSlide { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:none; } }
     .c-detail-photo {
@@ -510,6 +543,34 @@
     }
     .show-detail-logo img {
       width: 100%; height: 100%; object-fit: contain; padding: 7px; border-radius: 14px;
+    }
+    .show-detail-side {
+      width: 78px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .show-casting {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .show-casting-item {
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+    .show-casting-role {
+      display: block;
+      color: rgba(255,255,255,0.52);
+      word-break: keep-all;
+    }
+    .show-casting-name {
+      display: block;
+      color: var(--white);
+      font-weight: 700;
     }
     .show-detail-body { flex: 1; min-width: 0; }
     .show-detail-text {
@@ -600,9 +661,36 @@
       "명동로망스": {bg:"#1a6fa8",fg:"#fff"}
     };
     const showDescriptions = {
+      "어햎": {
+        title: "어햎",
+        img: "images/1.png",
+        casting: [
+          { role: "올리버", actor: "황건휘, 김상민" },
+          { role: "클레어", actor: "이미정, 오다현" }
+        ],
+        paragraphs: []
+      },
+      "레드북": {
+        title: "레드북",
+        img: "images/2.png",
+        casting: [
+          { role: "안나/메리", actor: "우정화" },
+          { role: "브라운", actor: "황건휘" },
+          { role: "도로시", actor: "이미정" },
+          { role: "코렐/안나", actor: "유보경" },
+          { role: "줄리아", actor: "오다현" }
+        ],
+        paragraphs: []
+      },
       "리지": {
         title: "리지",
         img: "images/3.png",
+        casting: [
+          { role: "리지 보든", actor: "김승희" },
+          { role: "엠마 보든", actor: "김지영" },
+          { role: "브리짓", actor: "정효경" },
+          { role: "앨리스", actor: "이미정" }
+        ],
         paragraphs: [
           "1892년, 미국의 폴 리버에서 보든 가의 부부가 도끼로 잔인하게 살해당한다.",
           "살해당한 앤드류 보든은 첫 번째 부인이 사망한 뒤 재혼하였으며, 둘째 딸인 리지 보든을 성폭행해왔다.",
@@ -613,6 +701,14 @@
       "식스": {
         title: "식스",
         img: "images/4.png",
+        casting: [
+          { role: "아라곤의 캐서린", actor: "오다현" },
+          { role: "앤 불린", actor: "우정화" },
+          { role: "제인 시모어", actor: "김승희" },
+          { role: "클레페의 안나", actor: "김지영" },
+          { role: "캐서린 하워드", actor: "김연진" },
+          { role: "캐서린 파", actor: "이정호" }
+        ],
         paragraphs: [
           "때는 500년 전 영국 튜더 왕가, 헨리 8세의 범상치 않은 여섯 왕비들이 무대에 오른다.",
           "헨리 8세와 가장 긴 결혼 생활을 유지한 ‘아라곤의 캐서린’,<br>국교를 바꾸면서까지 이뤄낸 재혼의 주인공 ‘앤 불린’,<br>사망 후 유일하게 왕비의 장례식이 치러진 ‘제인 시모어’,<br>합리적인 이혼 절차를 밟아 자신의 성에서 생을 마감한 ‘클레페의 안나’,<br>여섯 왕비 중 가장 어린 다섯번째 왕비 ‘캐서린 하워드’,<br>헨리 8세의 죽음을 지켜본 마지막 왕비 ‘캐서린 파’.",
@@ -622,9 +718,25 @@
       "해적": {
         title: "해적",
         img: "images/5.png",
+        casting: [
+          { role: "루이스/앤", actor: "정효경" },
+          { role: "잭/메리", actor: "조혜진" }
+        ],
         paragraphs: [
           "해적들이 드나드는 항구마을에 살고 있는 루이스는 소설가를 꿈꾸는 소년이다. 그는 돌아가신 아버지의 친구인 캡틴 잭, 총을 잘 쏘는 앤과 함께 해적선을 타고 보물섬을 찾아 항해를 시작한다. 그때 다른 해적선 한 대를 만나 전투가 벌어진다. 상대 해적선에는 검투사 마르코가 타고 있었고, 앤이 그에 맞서 싸운다."
         ]
+      },
+      "넥스트투노멀": {
+        title: "넥스트투노멀",
+        img: "images/6.png",
+        casting: [
+          { role: "다이애나", actor: "유보경, 이미정" },
+          { role: "댄", actor: "김상민" },
+          { role: "게이브", actor: "황건휘" },
+          { role: "나탈리", actor: "김승희, 이정호" },
+          { role: "헨리", actor: "성현지" }
+        ],
+        paragraphs: []
       }
     };
 
@@ -651,14 +763,24 @@
     window.openShowDescription = function(showKey) {
       const show = showDescriptions[showKey];
       if (!show) return;
+      const hasDescription = show.paragraphs && show.paragraphs.length > 0;
       grid.querySelectorAll('.c-card').forEach(c => c.classList.remove('active'));
-      detail.className = 'c-detail show-detail';
+      detail.className = `c-detail show-detail${hasDescription ? '' : ' cast-only'}`;
       detail.innerHTML = `
-        <div class="show-detail-logo"><img src="${show.img}" alt="공연 로고"></div>
+        <div class="show-detail-side">
+          <div class="show-detail-logo"><img src="${show.img}" alt="공연 로고"></div>
+          ${show.casting ? `
+          <div class="show-casting">${show.casting.map(c => `
+            <div class="show-casting-item">
+              <span class="show-casting-role">${c.role}</span>
+              <span class="show-casting-name">${c.actor}</span>
+            </div>`).join('')}</div>` : ''}
+        </div>
+        ${hasDescription ? `
         <div class="show-detail-body">
           <div class="c-detail-label">공연 설명</div>
           <div class="show-detail-text">${show.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>
-        </div>
+        </div>` : ''}
         <button class="c-close" onclick="closeOverlay()" aria-label="닫기">×</button>`;
       overlay.classList.add('open');
     };
