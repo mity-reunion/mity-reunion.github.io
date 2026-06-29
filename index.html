@@ -141,7 +141,25 @@
 
     
 
-    #setlist .section-title::after { background: var(--white); }
+    .about-setlist {
+      margin-top: 72px;
+      padding-top: 56px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .about-subtitle {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 900;
+      font-size: clamp(1.5rem, 4vw, 2.3rem);
+      line-height: 1;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+    .setlist-hint {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      color: var(--white);
+      margin-bottom: 32px;
+    }
 
     .setlist-col {
       display: flex;
@@ -171,14 +189,22 @@
       white-space: nowrap;
     }
     .sl-cast-name:hover { color: #fff; }
+    .setlist-logo-btn {
+      width: 72px; height: 72px;
+      border: 0; background: none; padding: 0;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .setlist-logo-btn:hover .setlist-logo { border-color: rgba(255,255,255,0.35); transform: translateY(-1px); }
     .setlist-logo {
       width: 72px; height: 72px;
       border-radius: 14px;
       object-fit: contain;
       background: rgba(255,255,255,0.06);
       padding: 6px;
+      border: 0.5px solid transparent;
       flex-shrink: 0;
       display: block;
+      transition: border-color 0.2s, transform 0.15s;
     }
     .setlist-text {
       font-size: 10px;
@@ -197,6 +223,7 @@
 
     @media (max-width: 700px) {
       .setlist-logo { width: 56px; height: 56px; border-radius: 10px; }
+      .setlist-logo-btn { width: 56px; height: 56px; }
       .setlist-text {
       font-size: 10px;
       color: rgba(255,255,255,0.35);
@@ -227,7 +254,7 @@
     <ul class="nav-links" id="navLinks">
       <li><a href="#about">공연소개</a></li>
       <li><a href="#cast">공연진 소개</a></li>
-      <li><a href="#setlist">공연 순서</a></li>
+      <li><a href="guide.html">예매안내</a></li>
       <li id="navBooking" style="display:none"><a href="booking.html?tab=check">예매확인</a></li>
     </ul>
   </nav>
@@ -239,7 +266,7 @@
     <ul>
       <li><a href="#about" onclick="closeMenu()">공연소개</a></li>
       <li><a href="#cast" onclick="closeMenu()">공연진 소개</a></li>
-      <li><a href="#setlist" onclick="closeMenu()">공연 순서</a></li>
+      <li><a href="guide.html" onclick="closeMenu()">예매안내</a></li>
       <li id="menuBooking" style="display:none"><a href="booking.html?tab=check" onclick="closeMenu()">예매확인</a></li>
     </ul>
   </div>
@@ -319,6 +346,59 @@
         </div>
       </div>
     </div>
+    <div id="setlist" class="about-setlist fade-in">
+      <p class="section-label">Program</p>
+      <h3 class="about-subtitle">공연 순서</h3>
+      <p class="setlist-hint">각 이미지를 클릭하면 상세 내용을 확인할 수 있습니다.</p>
+
+      <div class="setlist-col">
+
+        <div class="setlist-text">OPENING</div>
+        <div class="setlist-vdivider"></div>
+
+        <div class="setlist-show">
+          <img class="setlist-logo" src="images/1.png" alt="공연1">
+          <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(0)">김상민</span> <span class="sl-cast-name" onclick="openCard(6)">오다현</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(1)">황건휘</span></div>
+        </div>
+        <div class="setlist-vdivider"></div>
+
+        <div class="setlist-show">
+          <img class="setlist-logo" src="images/2.png" alt="공연2">
+          <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(6)">오다현</span> <span class="sl-cast-name" onclick="openCard(10)">우정화</span> <span class="sl-cast-name" onclick="openCard(3)">유보경</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(1)">황건휘</span></div>
+        </div>
+        <div class="setlist-vdivider"></div>
+
+        <div class="setlist-show">
+          <button class="setlist-logo-btn" onclick="openShowDescription('리지')" aria-label="3번 공연 설명 보기"><img class="setlist-logo" src="images/3.png" alt="공연3"></button>
+          <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(11)">김승희</span> <span class="sl-cast-name" onclick="openCard(9)">김지영</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(8)">정효경</span></div>
+        </div>
+        <div class="setlist-vdivider"></div>
+
+        <div class="setlist-text">INTERMISSION</div>
+        <div class="setlist-vdivider"></div>
+
+        <div class="setlist-show">
+          <button class="setlist-logo-btn" onclick="openShowDescription('식스')" aria-label="4번 공연 설명 보기"><img class="setlist-logo" src="images/4.png" alt="공연4"></button>
+          <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(11)">김승희</span> <span class="sl-cast-name" onclick="openCard(12)">김연진</span> <span class="sl-cast-name" onclick="openCard(9)">김지영</span> <span class="sl-cast-name" onclick="openCard(6)">오다현</span> <span class="sl-cast-name" onclick="openCard(10)">우정화</span> <span class="sl-cast-name" onclick="openCard(7)">이정호</span></div>
+        </div>
+        <div class="setlist-vdivider"></div>
+
+        <div class="setlist-show">
+          <button class="setlist-logo-btn" onclick="openShowDescription('해적')" aria-label="5번 공연 설명 보기"><img class="setlist-logo" src="images/5.png" alt="공연5"></button>
+          <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(8)">정효경</span> <span class="sl-cast-name" onclick="openCard(4)">조혜진</span></div>
+        </div>
+        <div class="setlist-vdivider"></div>
+
+        <div class="setlist-show">
+          <img class="setlist-logo" src="images/6.png" alt="공연6">
+          <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(0)">김상민</span> <span class="sl-cast-name" onclick="openCard(11)">김승희</span> <span class="sl-cast-name" onclick="openCard(5)">성현지</span> <span class="sl-cast-name" onclick="openCard(3)">유보경</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(7)">이정호</span> <span class="sl-cast-name" onclick="openCard(1)">황건휘</span></div>
+        </div>
+        <div class="setlist-vdivider"></div>
+
+        <div class="setlist-text">CURTAIN CALL</div>
+
+      </div>
+    </div>
   </section>
 
   <div class="divider"></div>
@@ -393,6 +473,12 @@
       animation: cSlide 0.2s ease;
       position: relative;
     }
+    .c-detail.show-detail {
+      width: min(680px, 92vw);
+      max-height: min(760px, 86vh);
+      overflow-y: auto;
+      align-items: flex-start;
+    }
     @keyframes cSlide { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:none; } }
     .c-detail-photo {
       width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
@@ -416,6 +502,25 @@
       font-family: 'Noto Sans KR', sans-serif;
       flex-shrink: 0;
     }
+    .show-detail-logo {
+      width: 78px; height: 78px; border-radius: 14px; flex-shrink: 0;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .show-detail-logo img {
+      width: 100%; height: 100%; object-fit: contain; padding: 7px; border-radius: 14px;
+    }
+    .show-detail-body { flex: 1; min-width: 0; }
+    .show-detail-text {
+      margin-top: 14px;
+      font-size: 0.86rem;
+      line-height: 1.9;
+      color: rgba(255,255,255,0.72);
+      font-weight: 300;
+      word-break: keep-all;
+    }
+    .show-detail-text p + p { margin-top: 14px; }
     .c-show-initial { }
     .c-show-name { display: none; }
     .c-close {
@@ -494,6 +599,34 @@
       "이솝이야기": {bg:"#cc2200",fg:"#fff"},
       "명동로망스": {bg:"#1a6fa8",fg:"#fff"}
     };
+    const showDescriptions = {
+      "리지": {
+        title: "리지",
+        img: "images/3.png",
+        paragraphs: [
+          "1892년, 미국의 폴 리버에서 보든 가의 부부가 도끼로 잔인하게 살해당한다.",
+          "살해당한 앤드류 보든은 첫 번째 부인이 사망한 뒤 재혼하였으며, 둘째 딸인 리지 보든을 성폭행해왔다.",
+          "리지가 위안을 얻는 대상은 직접 기르는 비둘기들과 다정한 옆집 친구 앨리스뿐. 그러나 어느 날 아버지가 비둘기들의 목을 전부 베어버렸고, 이후 살인사건이 발생한다.",
+          "유력한 용의자는 둘째인 리지 보든.<br>사건에 대해 리지와 리지의 옆집 친구 앨리스, 첫째인 엠마 보든, 보든 가의 가정부 브리짓이 법정에 선다."
+        ]
+      },
+      "식스": {
+        title: "식스",
+        img: "images/4.png",
+        paragraphs: [
+          "때는 500년 전 영국 튜더 왕가, 헨리 8세의 범상치 않은 여섯 왕비들이 무대에 오른다.",
+          "헨리 8세와 가장 긴 결혼 생활을 유지한 ‘아라곤의 캐서린’,<br>국교를 바꾸면서까지 이뤄낸 재혼의 주인공 ‘앤 불린’,<br>사망 후 유일하게 왕비의 장례식이 치러진 ‘제인 시모어’,<br>합리적인 이혼 절차를 밟아 자신의 성에서 생을 마감한 ‘클레페의 안나’,<br>여섯 왕비 중 가장 어린 다섯번째 왕비 ‘캐서린 하워드’,<br>헨리 8세의 죽음을 지켜본 마지막 왕비 ‘캐서린 파’.",
+          "‘헨리 8세의 왕비들’로만 기록되었던 그들은 오늘 밤 마이크를 들고 역사를 다시 써내려 간다…"
+        ]
+      },
+      "해적": {
+        title: "해적",
+        img: "images/5.png",
+        paragraphs: [
+          "해적들이 드나드는 항구마을에 살고 있는 루이스는 소설가를 꿈꾸는 소년이다. 그는 돌아가신 아버지의 친구인 캡틴 잭, 총을 잘 쏘는 앤과 함께 해적선을 타고 보물섬을 찾아 항해를 시작한다. 그때 다른 해적선 한 대를 만나 전투가 벌어진다. 상대 해적선에는 검투사 마르코가 타고 있었고, 앤이 그에 맞서 싸운다."
+        ]
+      }
+    };
 
     const bgs = ["rgba(181,212,244,0.15)","rgba(159,225,203,0.15)","rgba(245,196,179,0.15)","rgba(244,192,209,0.15)","rgba(192,221,151,0.15)","rgba(250,199,117,0.15)","rgba(206,203,246,0.15)","rgba(93,202,165,0.15)"];
     const fgs = ["#B5D4F4","#9FE1CB","#F5C4B3","#F4C0D1","#C0DD97","#FAC775","#CECBF6","#5DCAA5"];
@@ -509,11 +642,26 @@
     overlay.innerHTML = '<div class="c-detail" id="cDetailInner"></div>';
     document.body.appendChild(overlay);
     overlay.addEventListener('click', e => { if (e.target === overlay) closeOverlay(); });
+    const detail = document.getElementById('cDetailInner');
 
     function closeOverlay() {
       overlay.classList.remove('open');
       grid.querySelectorAll('.c-card').forEach(c => c.classList.remove('active'));
     }
+    window.openShowDescription = function(showKey) {
+      const show = showDescriptions[showKey];
+      if (!show) return;
+      grid.querySelectorAll('.c-card').forEach(c => c.classList.remove('active'));
+      detail.className = 'c-detail show-detail';
+      detail.innerHTML = `
+        <div class="show-detail-logo"><img src="${show.img}" alt="공연 로고"></div>
+        <div class="show-detail-body">
+          <div class="c-detail-label">공연 설명</div>
+          <div class="show-detail-text">${show.paragraphs.map(p => `<p>${p}</p>`).join('')}</div>
+        </div>
+        <button class="c-close" onclick="closeOverlay()" aria-label="닫기">×</button>`;
+      overlay.classList.add('open');
+    };
 
     members.forEach((m, i) => {
       const card = document.createElement('div');
@@ -537,7 +685,8 @@
       const m = members[idx];
       const fg = fgs[idx % fgs.length];
       const bg = bgs[idx % bgs.length];
-      document.getElementById('cDetailInner').innerHTML = `
+      detail.className = 'c-detail';
+      detail.innerHTML = `
         <div class="c-detail-photo" style="background:${bg};color:${fg};">${m.photo ? `<img src="${m.photo}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : m.name[0]}</div>
         <div style="flex:1;">
           <div class="c-detail-name">${m.name}</div>
@@ -553,61 +702,6 @@
     }
   })();
   </script>
-
-  <div class="halftone-bg" style="border-top: 1px solid rgba(255,255,255,0.08);">
-  <section id="setlist" style="padding: 80px 40px;">
-    <p class="section-label fade-in">Program</p>
-    <h2 class="section-title fade-in">공연 순서</h2>
-
-    <div class="setlist-col fade-in">
-
-      <div class="setlist-text">OPENING</div>
-      <div class="setlist-vdivider"></div>
-
-      <div class="setlist-show">
-        <img class="setlist-logo" src="images/1.png" alt="공연1">
-        <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(0)">김상민</span> <span class="sl-cast-name" onclick="openCard(6)">오다현</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(1)">황건휘</span></div>
-      </div>
-      <div class="setlist-vdivider"></div>
-
-      <div class="setlist-show">
-        <img class="setlist-logo" src="images/2.png" alt="공연2">
-        <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(6)">오다현</span> <span class="sl-cast-name" onclick="openCard(10)">우정화</span> <span class="sl-cast-name" onclick="openCard(3)">유보경</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span></div>
-      </div>
-      <div class="setlist-vdivider"></div>
-
-      <div class="setlist-show">
-        <img class="setlist-logo" src="images/3.png" alt="공연3">
-        <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(11)">김승희</span> <span class="sl-cast-name" onclick="openCard(9)">김지영</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(8)">정효경</span></div>
-      </div>
-      <div class="setlist-vdivider"></div>
-
-      <div class="setlist-text">INTERMISSION</div>
-      <div class="setlist-vdivider"></div>
-
-      <div class="setlist-show">
-        <img class="setlist-logo" src="images/4.png" alt="공연4">
-        <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(11)">김승희</span> <span class="sl-cast-name" onclick="openCard(12)">김연진</span> <span class="sl-cast-name" onclick="openCard(9)">김지영</span> <span class="sl-cast-name" onclick="openCard(6)">오다현</span> <span class="sl-cast-name" onclick="openCard(10)">우정화</span> <span class="sl-cast-name" onclick="openCard(7)">이정호</span></div>
-      </div>
-      <div class="setlist-vdivider"></div>
-
-      <div class="setlist-show">
-        <img class="setlist-logo" src="images/5.png" alt="공연5">
-        <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(8)">정효경</span> <span class="sl-cast-name" onclick="openCard(4)">조혜진</span></div>
-      </div>
-      <div class="setlist-vdivider"></div>
-
-      <div class="setlist-show">
-        <img class="setlist-logo" src="images/6.png" alt="공연6">
-        <div class="sl-cast"><span class="sl-cast-name" onclick="openCard(0)">김상민</span> <span class="sl-cast-name" onclick="openCard(11)">김승희</span> <span class="sl-cast-name" onclick="openCard(5)">성현지</span> <span class="sl-cast-name" onclick="openCard(3)">유보경</span> <span class="sl-cast-name" onclick="openCard(2)">이미정</span> <span class="sl-cast-name" onclick="openCard(7)">이정호</span> <span class="sl-cast-name" onclick="openCard(1)">황건휘</span></div>
-      </div>
-      <div class="setlist-vdivider"></div>
-
-      <div class="setlist-text">CURTAIN CALL</div>
-
-    </div>
-  </section>
-  </div>
 
   <div class="footer-outer">
   <footer>
