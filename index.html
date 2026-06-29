@@ -149,16 +149,27 @@
     .about-subtitle {
       font-family: 'Noto Sans KR', sans-serif;
       font-weight: 900;
-      font-size: clamp(1.5rem, 4vw, 2.3rem);
+      font-size: clamp(2.2rem, 6vw, 4rem);
       line-height: 1;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
+      position: relative;
+      display: inline-block;
       letter-spacing: -0.02em;
+    }
+    .about-subtitle::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -10px;
+      width: 40px;
+      height: 3px;
+      background: var(--white);
     }
     .setlist-hint {
       font-size: 0.75rem;
       letter-spacing: 0.08em;
       color: var(--white);
-      margin-bottom: 32px;
+      margin: 26px 0 32px;
     }
 
     .setlist-col {
@@ -262,7 +273,7 @@
     }
     .setlist-arrow { font-size: 16px; }
     }
-    @media (max-width: 520px) {
+    @media (max-width: 780px) {
       .nav-links { display: none; }
       .nav-hamburger { display: flex; }
     }
@@ -282,6 +293,7 @@
     <span class="nav-logo">M.I.T.Y REUNION</span>
     <ul class="nav-links" id="navLinks">
       <li><a href="#about">공연소개</a></li>
+      <li><a href="#setlist">작품소개</a></li>
       <li><a href="#cast">공연진 소개</a></li>
       <li><a href="guide.html">예매안내</a></li>
       <li id="navBooking" style="display:none"><a href="booking.html?tab=check">예매확인</a></li>
@@ -294,6 +306,7 @@
   <div class="mobile-menu" id="mobileMenu">
     <ul>
       <li><a href="#about" onclick="closeMenu()">공연소개</a></li>
+      <li><a href="#setlist" onclick="closeMenu()">작품소개</a></li>
       <li><a href="#cast" onclick="closeMenu()">공연진 소개</a></li>
       <li><a href="guide.html" onclick="closeMenu()">예매안내</a></li>
       <li id="menuBooking" style="display:none"><a href="booking.html?tab=check" onclick="closeMenu()">예매확인</a></li>
